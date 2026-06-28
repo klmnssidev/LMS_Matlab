@@ -1,30 +1,34 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 export type Role = "Admin" | "Teacher" | "Student";
 
-interface SessionClaims {
-  metadata?: {
-    role?: Role;
-    db_id?: number;
-  };
+export class ForbiddenError extends Error {
+  status = 403;
+  constructor(message = "Forbidden") {
+    super(message);
+    this.name = "ForbiddenError";
+  }
 }
 
 export async function getUserRole(): Promise<Role | null> {
-  const session = await auth();
-  const claims = session.sessionClaims as SessionClaims | null;
-  return claims?.metadata?.role ?? null;
+  const user = await currentUser();
+  return (user?.publicMetadata?.role as Role) ?? null;
 }
 
 export async function getDbUserId(): Promise<number | null> {
-  const session = await auth();
-  const claims = session.sessionClaims as SessionClaims | null;
-  return claims?.metadata?.db_id ?? null;
+  const user = await currentUser();
+  return (user?.publicMetadata?.db_id as number) ?? null;
 }
 
 export async function requireRole(...roles: Role[]) {
-  const role = await getUserRole();
+  const session = await auth();
+  if (!session.userId) {
+    throw new ForbiddenError("Not authenticated");
+  }
+  const user = await currentUser();
+  const role = (user?.publicMetadata?.role as Role) ?? null;
   if (!role || !roles.includes(role)) {
-    throw new Error("Forbidden");
+    throw new ForbiddenError(`Requires one of: ${roles.join(", ")} — your role: ${role ?? "none"}`);
   }
   return role;
 }

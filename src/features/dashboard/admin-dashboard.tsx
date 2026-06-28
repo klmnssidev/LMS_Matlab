@@ -49,8 +49,11 @@ export function AdminDashboard() {
 
   useEffect(() => {
     fetch("/api/stats")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load stats");
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || `Request failed (${res.status})`);
+        }
         return res.json();
       })
       .then(setStats)
@@ -71,7 +74,7 @@ export function AdminDashboard() {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-destructive">Failed to load statistics. Make sure the database is connected.</p>
+        <p className="text-destructive">{error}</p>
       </div>
     );
   }

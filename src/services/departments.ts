@@ -1,12 +1,13 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { dateStringNullable } from "@/lib/zod-utils";
 
 export const DepartmentSchema = z.object({
   department_id: z.number(),
   department_code: z.string().max(10),
   department_name: z.string().max(100),
   faculty_name: z.string().max(100),
-  created_at: z.string().nullable(),
+  created_at: dateStringNullable(),
 });
 
 export const CreateDepartmentSchema = DepartmentSchema.omit({ department_id: true, created_at: true });

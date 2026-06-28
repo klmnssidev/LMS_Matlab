@@ -1,12 +1,13 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { dateString } from "@/lib/zod-utils";
 
 export const SemesterSchema = z.object({
   semester_id: z.number(),
   semester_name: z.string().max(50),
   academic_year: z.string().max(20),
-  start_date: z.string(),
-  end_date: z.string(),
+  start_date: dateString(),
+  end_date: dateString(),
 });
 
 export const CreateSemesterSchema = SemesterSchema.omit({ semester_id: true });

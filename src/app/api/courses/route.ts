@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listCourses, getCourse, createCourse, updateCourse, deleteCourse } from "@/services/courses";
-import { requireRole } from "@/lib/rbac";
+import { ForbiddenError, requireRole } from "@/lib/rbac";
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,7 +23,8 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(courses);
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    const status = error instanceof ForbiddenError ? error.status : 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : JSON.stringify(error) }, { status });
   }
 }
 
@@ -34,7 +35,8 @@ export async function POST(req: NextRequest) {
     const course = await createCourse(body);
     return NextResponse.json(course, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    const status = error instanceof ForbiddenError ? error.status : 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : JSON.stringify(error) }, { status });
   }
 }
 
@@ -48,7 +50,8 @@ export async function PUT(req: NextRequest) {
     if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(course);
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    const status = error instanceof ForbiddenError ? error.status : 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : JSON.stringify(error) }, { status });
   }
 }
 
@@ -62,6 +65,7 @@ export async function DELETE(req: NextRequest) {
     if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    const status = error instanceof ForbiddenError ? error.status : 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : JSON.stringify(error) }, { status });
   }
 }

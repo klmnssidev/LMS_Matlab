@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { dateString } from "@/lib/zod-utils";
 
 export const TeacherSchema = z.object({
   teacher_id: z.number(),
@@ -8,7 +9,7 @@ export const TeacherSchema = z.object({
   email: z.string().max(120).email(),
   phone: z.string().max(30).nullable(),
   academic_rank: z.string().max(50),
-  hire_date: z.string(),
+  hire_date: dateString(),
 });
 
 export const CreateTeacherSchema = TeacherSchema.omit({ teacher_id: true });

@@ -1,10 +1,11 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { dateString } from "@/lib/zod-utils";
 
 export const AttendanceSchema = z.object({
   attendance_id: z.number(),
   enrollment_id: z.number(),
-  attendance_date: z.string(),
+  attendance_date: dateString(),
   status: z.enum(["Present", "Absent", "Late", "Excused"]),
   remarks: z.string().max(255).nullable(),
 });
@@ -117,3 +118,4 @@ export async function deleteAttendance(id: number): Promise<boolean> {
   const { rowCount } = await db.query("DELETE FROM attendance WHERE attendance_id = $1", [id]);
   return (rowCount ?? 0) > 0;
 }
+

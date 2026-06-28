@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { dateStringNullable } from "@/lib/zod-utils";
 
 export const StudentSchema = z.object({
   student_id: z.number(),
@@ -8,7 +9,7 @@ export const StudentSchema = z.object({
   email: z.string().max(120).email(),
   phone: z.string().max(30).nullable(),
   gender: z.enum(["Male", "Female"]),
-  date_of_birth: z.string().nullable(),
+  date_of_birth: dateStringNullable(),
   admission_year: z.number(),
   status: z.enum(["Active", "Graduated", "Suspended", "Withdrawn"]).default("Active"),
 });

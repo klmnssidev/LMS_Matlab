@@ -1,11 +1,12 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { dateString } from "@/lib/zod-utils";
 
 export const EnrollmentSchema = z.object({
   enrollment_id: z.number(),
   student_id: z.number(),
   offering_id: z.number(),
-  enrollment_date: z.string(),
+  enrollment_date: dateString(),
   status: z.enum(["Active", "Completed", "Dropped"]).default("Active"),
   final_grade: z.string().max(5).nullable(),
 });

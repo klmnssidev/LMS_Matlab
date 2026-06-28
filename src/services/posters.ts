@@ -1,10 +1,11 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { dateStringNullable } from "@/lib/zod-utils";
 
 export const PosterSchema = z.object({
   poster_id: z.number(),
   title: z.string().max(200),
-  created_at: z.string().nullable(),
+  created_at: dateStringNullable(),
 });
 
 export const PosterFullSchema = PosterSchema.extend({

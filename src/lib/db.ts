@@ -1,7 +1,11 @@
-import { sql } from "@vercel/postgres";
+import { Pool } from "pg";
 
-export const db = sql;
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+});
 
 export async function query(text: string, params?: unknown[]) {
-  return sql.query(text, params);
-} 
+  return pool.query(text, params);
+}
+
+export const db = { query };

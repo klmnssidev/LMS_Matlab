@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listPosters, getPoster, createPoster, deletePoster } from "@/services/posters";
-import { requireRole } from "@/lib/rbac";
+import { ForbiddenError, requireRole } from "@/lib/rbac";
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,7 +16,8 @@ export async function GET(req: NextRequest) {
     const posters = await listPosters();
     return NextResponse.json(posters);
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    const status = error instanceof ForbiddenError ? error.status : 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : JSON.stringify(error) }, { status });
   }
 }
 
@@ -35,7 +36,8 @@ export async function POST(req: NextRequest) {
     const poster = await createPoster({ title, image_data: buffer });
     return NextResponse.json(poster, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    const status = error instanceof ForbiddenError ? error.status : 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : JSON.stringify(error) }, { status });
   }
 }
 
@@ -49,6 +51,7 @@ export async function DELETE(req: NextRequest) {
     if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    const status = error instanceof ForbiddenError ? error.status : 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : JSON.stringify(error) }, { status });
   }
 }

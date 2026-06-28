@@ -1,11 +1,12 @@
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { dateString } from "@/lib/zod-utils";
 
 export const ExamSchema = z.object({
   exam_id: z.number(),
   offering_id: z.number(),
   exam_type: z.enum(["Quiz", "Midterm", "Final", "Project"]),
-  exam_date: z.string(),
+  exam_date: dateString(),
   max_score: z.number(),
 });
 
