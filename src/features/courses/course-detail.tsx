@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,52 +20,15 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonProfile } from "@/components/loading-skeletons";
-import type { CourseWithDept } from "./types";
-
-type Offering = {
-  offering_id: number;
-  teacher_name: string;
-  semester_name: string;
-  section_name: string;
-  room_code: string;
-};
+import { useCourse } from "@/features/courses/hooks/use-courses";
 
 export function CourseDetail({ id }: { id: number }) {
-  const [course, setCourse] = useState<CourseWithDept | null>(null);
-  const [offerings, setOfferings] = useState<Offering[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: course, isLoading, error } = useCourse(id);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      if (!cancelled) setLoading(true);
-      if (!cancelled) setError(null);
+  if (isLoading) return <SkeletonProfile hasAvatar={false} />;
+  if (error || !course) return <p className="text-destructive">{error?.message || "Not found"}</p>;
 
-      try {
-        const [courseRes, offeringsRes] = await Promise.all([
-          fetch(`/api/courses?id=${id}`),
-          fetch(`/api/course-offerings?course_id=${id}`),
-        ]);
-        if (!courseRes.ok) throw new Error("Course not found");
-        const courseData = await courseRes.json();
-        if (!cancelled) setCourse(courseData);
-
-        if (offeringsRes.ok) {
-          const offeringsData = await offeringsRes.json();
-          if (!cancelled) setOfferings(offeringsData);
-        }
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [id]);
-
-  if (loading) return <SkeletonProfile hasAvatar={false} />;
-  if (error || !course) return <p className="text-destructive">{error || "Not found"}</p>;
+  const offerings = course.offerings ?? [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,8 +37,8 @@ export function CourseDetail({ id }: { id: number }) {
           <ArrowLeft />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{course.course_name}</h1>
-          <p className="text-sm text-muted-foreground font-mono">{course.course_code}</p>
+          <h1 className="text-3xl font-bold tracking-tight">{course.courseName}</h1>
+          <p className="text-sm text-muted-foreground font-mono">{course.courseCode}</p>
         </div>
       </div>
 
@@ -87,19 +49,19 @@ export function CourseDetail({ id }: { id: number }) {
               <div className="flex items-center gap-3">
                 <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <span className="text-lg font-bold text-primary">
-                    {course.course_code.charAt(0)}
+                    {course.courseCode.charAt(0)}
                   </span>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Department</p>
-                  <p className="font-medium">{course.department_name}</p>
+                  <p className="font-medium">{course.departmentName}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-center">
                 <div className="rounded-lg bg-muted p-3">
                   <p className="text-xs text-muted-foreground">Credit Hours</p>
-                  <p className="font-semibold text-lg">{course.credit_hours}</p>
+                  <p className="font-semibold text-lg">{course.creditHours}</p>
                 </div>
                 <div className="rounded-lg bg-muted p-3">
                   <p className="text-xs text-muted-foreground">Offerings</p>
@@ -136,11 +98,11 @@ export function CourseDetail({ id }: { id: number }) {
                   </TableHeader>
                   <TableBody>
                     {offerings.map((o) => (
-                      <TableRow key={o.offering_id}>
-                        <TableCell className="font-medium">{o.section_name}</TableCell>
-                        <TableCell>{o.teacher_name}</TableCell>
-                        <TableCell className="text-muted-foreground">{o.semester_name}</TableCell>
-                        <TableCell className="text-muted-foreground">{o.room_code}</TableCell>
+                      <TableRow key={o.offeringId}>
+                        <TableCell className="font-medium">{o.sectionName}</TableCell>
+                        <TableCell>{o.teacherName}</TableCell>
+                        <TableCell className="text-muted-foreground">{o.semesterName}</TableCell>
+                        <TableCell className="text-muted-foreground">{o.roomCode}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

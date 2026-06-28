@@ -1,2 +1,2 @@
-export type { Course, CourseWithDept, CreateCourse } from "@/services/courses";
-export { CourseSchema, CourseWithDeptSchema, CreateCourseSchema } from "@/services/courses";
+export type { Course, CourseWithDept, CreateCourse, UpdateCourse } from "@/server/schemas/course.schema";
+export { CourseSchema, CourseWithDeptSchema, CreateCourseSchema, UpdateCourseSchema } from "@/server/schemas/course.schema";

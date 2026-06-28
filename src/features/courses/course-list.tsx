@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -14,36 +14,12 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonCardGrid } from "@/components/loading-skeletons";
-import type { CourseWithDept } from "./types";
+import { useCourses } from "@/features/courses/hooks/use-courses";
 
 export function CourseList() {
-  const [courses, setCourses] = useState<CourseWithDept[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-
-      if (!cancelled) setLoading(true);
-      if (!cancelled) setError(null);
-
-      try {
-        const res = await fetch(`/api/courses?${params}`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        if (!cancelled) setCourses(data);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [search]);
+  const { data, isLoading, error } = useCourses({ search: search || undefined });
+  const courses = data?.data ?? [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,10 +35,10 @@ export function CourseList() {
         />
       </div>
 
-      {loading && <SkeletonCardGrid count={6} />}
-      {error && <p className="text-destructive">{error}</p>}
+      {isLoading && <SkeletonCardGrid count={6} />}
+      {error && <p className="text-destructive">{error.message}</p>}
 
-      {!loading && !error && courses.length === 0 && (
+      {!isLoading && !error && courses.length === 0 && (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon"><Search /></EmptyMedia>
@@ -72,24 +48,24 @@ export function CourseList() {
         </Empty>
       )}
 
-      {!loading && !error && courses.length > 0 && (
+      {!isLoading && !error && courses.length > 0 && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {courses.map((c) => (
-            <Link key={c.course_id} href={`/courses/${c.course_id}`}>
+            <Link key={c.courseId} href={`/courses/${c.courseId}`}>
               <Card className="group cursor-pointer transition-shadow hover:shadow-md">
                 <CardContent className="flex flex-col gap-3 pt-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs font-mono text-muted-foreground">{c.course_code}</p>
+                      <p className="text-xs font-mono text-muted-foreground">{c.courseCode}</p>
                       <p className="font-semibold leading-tight group-hover:text-primary transition-colors">
-                        {c.course_name}
+                        {c.courseName}
                       </p>
                     </div>
                     <Badge variant="secondary" className="shrink-0">
-                      {c.credit_hours} cr
+                      {c.creditHours} cr
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{c.department_name}</p>
+                  <p className="text-sm text-muted-foreground">{c.departmentName}</p>
                 </CardContent>
               </Card>
             </Link>

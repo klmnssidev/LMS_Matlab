@@ -1,0 +1,93 @@
+import { NextRequest, NextResponse } from "next/server";
+import * as courseService from "@/server/services/course.service";
+import { CreateCourseSchema, UpdateCourseSchema } from "@/server/schemas/course.schema";
+import { requireRole } from "@/server/permissions/student.ability";
+
+export async function list(req: NextRequest) {
+  try {
+    await requireRole("Admin", "Teacher", "Student");
+    const { searchParams } = new URL(req.url);
+    const filters = {
+      search: searchParams.get("search") || undefined,
+      limit: searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined,
+      offset: searchParams.get("offset") ? Number(searchParams.get("offset")) : undefined,
+    };
+    const [courses, total] = await Promise.all([
+      courseService.list(filters),
+      courseService.count(filters),
+    ]);
+    return NextResponse.json({ data: courses, total });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.includes("Forbidden") ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function getById(req: NextRequest) {
+  try {
+    await requireRole("Admin", "Teacher", "Student");
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const course = await courseService.getById(Number(id));
+    if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(course);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.includes("Forbidden") ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function create(req: NextRequest) {
+  try {
+    await requireRole("Admin");
+    const body = await req.json();
+    const parsed = CreateCourseSchema.parse(body);
+    const course = await courseService.create(parsed);
+    return NextResponse.json(course, { status: 201 });
+  } catch (error) {
+    if (error instanceof Error && "issues" in error) {
+      return NextResponse.json({ error: "Validation failed", details: (error as { issues: unknown[] }).issues }, { status: 400 });
+    }
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.includes("Forbidden") ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function update(req: NextRequest) {
+  try {
+    await requireRole("Admin");
+    const body = await req.json();
+    const { course_id, ...data } = body;
+    if (!course_id) return NextResponse.json({ error: "course_id required" }, { status: 400 });
+    const parsed = UpdateCourseSchema.parse(data);
+    const course = await courseService.update(course_id, parsed);
+    if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(course);
+  } catch (error) {
+    if (error instanceof Error && "issues" in error) {
+      return NextResponse.json({ error: "Validation failed", details: (error as { issues: unknown[] }).issues }, { status: 400 });
+    }
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.includes("Forbidden") ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function remove(req: NextRequest) {
+  try {
+    await requireRole("Admin");
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    await courseService.remove(Number(id));
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.includes("Forbidden") ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
