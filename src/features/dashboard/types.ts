@@ -1,2 +1,1 @@
-export type { DashboardStats } from "@/services/stats";
-export { getDashboardStats } from "@/services/stats";
+export type { DashboardStats, StudentStats, TeacherStats } from "@/server/services/stats.service";

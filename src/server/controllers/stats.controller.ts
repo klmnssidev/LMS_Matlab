@@ -37,11 +37,11 @@ export async function getMyStats() {
         ...stats,
         offerings: offerings.map((o) => ({
           offering_id: o.offeringId,
-          course_code: o.course.courseCode,
-          course_name: o.course.courseName,
+          course_code: o.courseCode,
+          course_name: o.courseName,
           section_name: o.sectionName,
-          semester_name: o.semester.semesterName,
-          room_code: o.classroom.roomCode,
+          semester_name: o.semesterName,
+          room_code: o.roomCode,
           max_students: o.maxStudents,
         })),
       });

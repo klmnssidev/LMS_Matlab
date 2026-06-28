@@ -1,2 +1,2 @@
-export type { Semester, CreateSemester } from "@/services/semesters";
-export { SemesterSchema, CreateSemesterSchema } from "@/services/semesters";
+export type { Semester, CreateSemester } from "@/server/schemas/semester.schema";
+export { SemesterSchema, CreateSemesterSchema } from "@/server/schemas/semester.schema";

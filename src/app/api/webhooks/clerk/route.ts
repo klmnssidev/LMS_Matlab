@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { prisma } from "@/server/lib/prisma";
 
 export async function POST(req: Request) {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
@@ -39,18 +39,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No email" }, { status: 400 });
     }
 
-    const studentResult = await db.query("SELECT student_id FROM students WHERE email = $1", [email]);
-    const teacherResult = await db.query("SELECT teacher_id FROM teachers WHERE email = $1", [email]);
+    const [student, teacher] = await Promise.all([
+      prisma.student.findFirst({ where: { email }, select: { studentId: true } }),
+      prisma.teacher.findFirst({ where: { email }, select: { teacherId: true } }),
+    ]);
 
     let role = "Student";
     let dbId: number | null = null;
 
-    if (studentResult.rows.length > 0) {
+    if (student) {
       role = "Student";
-      dbId = studentResult.rows[0].student_id;
-    } else if (teacherResult.rows.length > 0) {
+      dbId = student.studentId;
+    } else if (teacher) {
       role = "Teacher";
-      dbId = teacherResult.rows[0].teacher_id;
+      dbId = teacher.teacherId;
     }
 
     const { clerkClient } = await import("@clerk/nextjs/server");

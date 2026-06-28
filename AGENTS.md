@@ -45,12 +45,10 @@ Next.js 16.2.9 university management dashboard. Clerk auth + RBAC, PostgreSQL (p
 - Exam results management UI (admin/teacher)
 - Course offering management
 
-## Cleanup Remaining
-- Delete old files after all features verified working: `src/lib/db.ts`, `src/lib/rbac.ts`, `src/services/` (14 files), `src/features/dashboard/types.ts`
-
 ## Critical Context
 - Prisma 7.8.0 with `@prisma/adapter-pg` — constructor uses `new PrismaClient({ adapter })`
-- `pg` package remains installed (needed by `@prisma/adapter-pg` and old services until fully deleted)
+- `pg` package remains installed (needed by `@prisma/adapter-pg`)
 - DB: PostgreSQL 16 on localhost:5432, database `adv_db`, 12 tables
 - `.env`: `DATABASE_URL=postgresql://_klmnssi:postgres@localhost:5432/adv_db`
 - Route conflicts exist between `(dashboard)` route group and root `/students`, `/courses`, `/teachers` routes
+- Old `src/services/`, `src/lib/db.ts`, `src/lib/rbac.ts` deleted — all code uses Prisma + TanStack Query

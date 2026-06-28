@@ -1,2 +1,2 @@
-export type { Classroom, CreateClassroom } from "@/services/classrooms";
-export { ClassroomSchema, CreateClassroomSchema } from "@/services/classrooms";
+export type { Classroom, CreateClassroom } from "@/server/schemas/classroom.schema";
+export { ClassroomSchema, CreateClassroomSchema } from "@/server/schemas/classroom.schema";

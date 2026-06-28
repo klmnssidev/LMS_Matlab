@@ -1,6 +1,6 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { prisma } from "@/server/lib/prisma";
 
 export async function GET() {
   const session = await auth();
@@ -17,18 +17,20 @@ export async function GET() {
     const primaryEmail = user.primaryEmailAddress?.emailAddress;
 
     if (primaryEmail) {
-      const studentResult = await db.query("SELECT student_id FROM students WHERE email = $1", [primaryEmail]);
-      const teacherResult = await db.query("SELECT teacher_id FROM teachers WHERE email = $1", [primaryEmail]);
+      const [student, teacher] = await Promise.all([
+        prisma.student.findFirst({ where: { email: primaryEmail }, select: { studentId: true } }),
+        prisma.teacher.findFirst({ where: { email: primaryEmail }, select: { teacherId: true } }),
+      ]);
 
       let role = "Student";
       let dbId: number | null = null;
 
-      if (studentResult.rows.length > 0) {
+      if (student) {
         role = "Student";
-        dbId = studentResult.rows[0].student_id;
-      } else if (teacherResult.rows.length > 0) {
+        dbId = student.studentId;
+      } else if (teacher) {
         role = "Teacher";
-        dbId = teacherResult.rows[0].teacher_id;
+        dbId = teacher.teacherId;
       }
 
       await client.users.updateUser(userId, {

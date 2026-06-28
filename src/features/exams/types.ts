@@ -1,2 +1,2 @@
-export type { Exam, ExamJoined, CreateExam } from "@/services/exams";
-export { ExamSchema, ExamJoinedSchema, CreateExamSchema } from "@/services/exams";
+export type { Exam, ExamJoined, CreateExam } from "@/server/schemas/exam.schema";
+export { ExamSchema, ExamJoinedSchema, CreateExamSchema } from "@/server/schemas/exam.schema";
