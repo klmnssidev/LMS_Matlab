@@ -82,22 +82,22 @@ export function MyCourses() {
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {enrollments.map((e) => (
-          <Card key={e.enrollment_id} className="group transition-shadow hover:shadow-md">
+          <Card key={e.enrollmentId} className="group transition-shadow hover:shadow-md">
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-mono text-muted-foreground">{e.course_code}</p>
+                  <p className="text-xs font-mono text-muted-foreground">{e.courseCode}</p>
                   <CardTitle className="text-base group-hover:text-primary transition-colors">
-                    {e.course_name}
+                    {e.courseName}
                   </CardTitle>
                 </div>
                 <Badge variant={badgeVariant(e.status)}>{e.status}</Badge>
               </div>
             </CardHeader>
             <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
-              <p>Section: {e.section_name}</p>
-              <p>Semester: {e.semester_name}</p>
-              {e.final_grade && <p>Grade: <span className="font-semibold text-foreground">{e.final_grade}</span></p>}
+              <p>Section: {e.sectionName}</p>
+              <p>Semester: {e.semesterName}</p>
+              {e.finalGrade && <p>Grade: <span className="font-semibold text-foreground">{e.finalGrade}</span></p>}
             </CardContent>
           </Card>
         ))}

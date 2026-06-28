@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonTable } from "@/components/loading-skeletons";
-import type { EnrollmentJoined } from "./types";
+import { useEnrollments } from "@/features/enrollments/hooks/use-enrollments";
 
 const statusItems = [
   { label: "All Status", value: "" },
@@ -48,34 +48,13 @@ function badgeVariant(status: string) {
 }
 
 export function EnrollmentList() {
-  const [enrollments, setEnrollments] = useState<EnrollmentJoined[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 20;
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      const params = new URLSearchParams();
-      if (statusFilter) params.set("status", statusFilter);
-      if (!cancelled) setLoading(true);
-      if (!cancelled) setError(null);
-      try {
-        const res = await fetch(`/api/enrollments?${params}`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        if (!cancelled) setEnrollments(data);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [statusFilter, offset]);
+  const { data, isLoading, error } = useEnrollments({ status: statusFilter || undefined });
 
+  const enrollments = data?.data ?? [];
   const displayed = enrollments.slice(offset, offset + limit);
 
   return (
@@ -105,10 +84,10 @@ export function EnrollmentList() {
         </Select>
       </div>
 
-      {loading && <SkeletonTable rows={5} cols={7} />}
-      {error && <p className="text-destructive">{error}</p>}
+      {isLoading && <SkeletonTable rows={5} cols={7} />}
+      {error && <p className="text-destructive">{error.message}</p>}
 
-      {!loading && !error && displayed.length === 0 && (
+      {!isLoading && !error && displayed.length === 0 && (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon" />
@@ -118,7 +97,7 @@ export function EnrollmentList() {
         </Empty>
       )}
 
-      {!loading && !error && displayed.length > 0 && (
+      {!isLoading && !error && displayed.length > 0 && (
         <>
           <Table>
             <TableHeader>
@@ -134,20 +113,20 @@ export function EnrollmentList() {
             </TableHeader>
             <TableBody>
               {displayed.map((e) => (
-                <TableRow key={e.enrollment_id}>
-                  <TableCell className="font-medium">{e.student_name}</TableCell>
+                <TableRow key={e.enrollmentId}>
+                  <TableCell className="font-medium">{e.studentName}</TableCell>
                   <TableCell>
-                    <span className="text-xs font-mono text-muted-foreground">{e.course_code}</span>{" "}
-                    {e.course_name}
+                    <span className="text-xs font-mono text-muted-foreground">{e.courseCode}</span>{" "}
+                    {e.courseName}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{e.section_name}</TableCell>
-                  <TableCell className="text-muted-foreground">{e.semester_name}</TableCell>
+                  <TableCell className="text-muted-foreground">{e.sectionName}</TableCell>
+                  <TableCell className="text-muted-foreground">{e.semesterName}</TableCell>
                   <TableCell>
                     <Badge variant={badgeVariant(e.status)}>{e.status}</Badge>
                   </TableCell>
-                  <TableCell>{e.final_grade ?? "—"}</TableCell>
+                  <TableCell>{e.finalGrade ?? "—"}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="link" size="sm" render={<Link href={`/students/${e.student_id}`} />}>
+                    <Button variant="link" size="sm" render={<Link href={`/students/${e.studentId}`} />}>
                       View Student
                     </Button>
                   </TableCell>
