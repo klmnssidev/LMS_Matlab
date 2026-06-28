@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
 import { BookMarked } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +11,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonCardGrid } from "@/components/loading-skeletons";
-import type { EnrollmentJoined } from "@/features/enrollments/types";
+import { useMyCourses } from "@/features/courses/hooks/use-my-courses";
 
 function badgeVariant(status: string) {
   switch (status) {
@@ -25,30 +23,9 @@ function badgeVariant(status: string) {
 }
 
 export function MyCourses() {
-  const [enrollments, setEnrollments] = useState<EnrollmentJoined[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useUser();
-  const dbId = (user?.publicMetadata?.db_id ?? 0) as number;
+  const { data: enrollments = [], isLoading, error } = useMyCourses();
 
-  useEffect(() => {
-    if (!dbId) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    fetch(`/api/enrollments?student_id=${dbId}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        if (!cancelled) setEnrollments(data);
-      })
-      .catch((e) => { if (!cancelled) setError(e.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [dbId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">My Courses</h1>
@@ -61,7 +38,7 @@ export function MyCourses() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">My Courses</h1>
-        <p className="text-destructive">{error}</p>
+        <p className="text-destructive">{error.message}</p>
       </div>
     );
   }

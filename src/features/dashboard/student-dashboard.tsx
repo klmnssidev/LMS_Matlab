@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { BookOpen, Trophy, CalendarCheck, GraduationCap } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -14,18 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SkeletonStatCards } from "@/components/loading-skeletons";
-
-type StudentStats = {
-  enrollments: { total: number; active: number; completed: number };
-  upcomingExams: {
-    exam_id: number;
-    exam_type: string;
-    exam_date: string;
-    course_name: string;
-    course_code: string;
-  }[];
-  attendance: { status: string; count: number }[];
-};
+import { useMyStats } from "@/features/dashboard/hooks";
 
 function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number | string }) {
   return (
@@ -52,25 +40,9 @@ function attendanceBadge(status: string) {
 
 export function StudentDashboard() {
   const { user } = useUser();
-  const [stats, setStats] = useState<StudentStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: stats, isLoading, error } = useMyStats();
 
-  useEffect(() => {
-    fetch("/api/my-stats")
-      .then(async (res) => {
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || `Request failed (${res.status})`);
-        }
-        return res.json();
-      })
-      .then(setStats)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Student"}</h1>
@@ -83,24 +55,30 @@ export function StudentDashboard() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Student"}</h1>
-        <p className="text-destructive">{error}</p>
+        <p className="text-destructive">{error?.message ?? "Failed to load"}</p>
       </div>
     );
   }
+
+  const { enrollments, upcomingExams, attendance } = stats as {
+    enrollments: { total: number; active: number; completed: number };
+    upcomingExams: { exam_id: number; exam_type: string; exam_date: string; course_name: string; course_code: string }[];
+    attendance: { status: string; count: number }[];
+  };
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Student"}</h1>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={BookOpen} label="Enrolled" value={stats.enrollments.active} />
-        <StatCard icon={GraduationCap} label="Completed" value={stats.enrollments.completed} />
-        <StatCard icon={Trophy} label="Total Courses" value={stats.enrollments.total} />
-        <StatCard icon={CalendarCheck} label="Upcoming Exams" value={stats.upcomingExams.length} />
+        <StatCard icon={BookOpen} label="Enrolled" value={enrollments.active} />
+        <StatCard icon={GraduationCap} label="Completed" value={enrollments.completed} />
+        <StatCard icon={Trophy} label="Total Courses" value={enrollments.total} />
+        <StatCard icon={CalendarCheck} label="Upcoming Exams" value={upcomingExams.length} />
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-        {stats.upcomingExams.length > 0 && (
+        {upcomingExams.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Upcoming Exams</CardTitle>
@@ -115,10 +93,11 @@ export function StudentDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {stats.upcomingExams.map((ex) => (
+                  {upcomingExams.map((ex) => (
                     <TableRow key={ex.exam_id}>
                       <TableCell>
-                        <span className="text-xs font-mono text-muted-foreground">{ex.course_code}</span>{" "}
+                        <span className="text-xs font-mono text-muted-foreground">{ex.course_code}</span>
+                        {" "}
                         {ex.course_name}
                       </TableCell>
                       <TableCell className="capitalize">{ex.exam_type}</TableCell>
@@ -131,7 +110,7 @@ export function StudentDashboard() {
           </Card>
         )}
 
-        {stats.attendance.length > 0 && (
+        {attendance.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Attendance Summary</CardTitle>
@@ -145,7 +124,7 @@ export function StudentDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {stats.attendance.map((a) => (
+                  {attendance.map((a) => (
                     <TableRow key={a.status}>
                       <TableCell>
                         <Badge variant={attendanceBadge(a.status)}>{a.status}</Badge>

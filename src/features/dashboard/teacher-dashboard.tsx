@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { BookOpen, Users, CalendarCheck, GraduationCap } from "lucide-react";
+import { BookOpen, Users, CalendarCheck } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -13,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SkeletonStatCards } from "@/components/loading-skeletons";
+import { useMyStats } from "@/features/dashboard/hooks";
 
 type Offering = {
   offering_id: number;
@@ -22,13 +22,6 @@ type Offering = {
   semester_name: string;
   room_code: string;
   max_students: number;
-};
-
-type TeacherStats = {
-  totalOfferings: number;
-  totalStudents: number;
-  upcomingExams: { exam_id: number; course_name: string; exam_date: string; exam_type: string }[];
-  offerings: Offering[];
 };
 
 function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number }) {
@@ -47,25 +40,9 @@ function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label
 
 export function TeacherDashboard() {
   const { user } = useUser();
-  const [stats, setStats] = useState<TeacherStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: stats, isLoading, error } = useMyStats();
 
-  useEffect(() => {
-    fetch("/api/my-stats")
-      .then(async (res) => {
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || `Request failed (${res.status})`);
-        }
-        return res.json();
-      })
-      .then(setStats)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Teacher"}</h1>
@@ -78,19 +55,21 @@ export function TeacherDashboard() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Teacher"}</h1>
-        <p className="text-destructive">{error}</p>
+        <p className="text-destructive">{error?.message ?? "Failed to load"}</p>
       </div>
     );
   }
+
+  const { totalOfferings, totalStudents, upcomingExams, offerings } = stats as typeof stats & { offerings: Offering[] };
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Teacher"}</h1>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        <StatCard icon={BookOpen} label="My Courses" value={stats.totalOfferings} />
-        <StatCard icon={Users} label="Total Students" value={stats.totalStudents} />
-        <StatCard icon={CalendarCheck} label="Upcoming Exams" value={stats.upcomingExams.length} />
+        <StatCard icon={BookOpen} label="My Courses" value={totalOfferings} />
+        <StatCard icon={Users} label="Total Students" value={totalStudents} />
+        <StatCard icon={CalendarCheck} label="Upcoming Exams" value={upcomingExams.length} />
       </div>
 
       <Card className="border-t-[3px] border-t-accent/40">
@@ -109,10 +88,11 @@ export function TeacherDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stats.offerings.map((o) => (
+              {offerings.map((o: Offering) => (
                 <TableRow key={o.offering_id}>
                   <TableCell>
-                    <span className="text-xs font-mono text-muted-foreground">{o.course_code}</span>{" "}
+                    <span className="text-xs font-mono text-muted-foreground">{o.course_code}</span>
+                    {" "}
                     {o.course_name}
                   </TableCell>
                   <TableCell>{o.section_name}</TableCell>
@@ -121,7 +101,7 @@ export function TeacherDashboard() {
                   <TableCell>{o.max_students}</TableCell>
                 </TableRow>
               ))}
-              {stats.offerings.length === 0 && (
+              {offerings.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">
                     No course offerings assigned yet.
@@ -133,7 +113,7 @@ export function TeacherDashboard() {
         </CardContent>
       </Card>
 
-      {stats.upcomingExams.length > 0 && (
+      {upcomingExams.length > 0 && (
         <Card className="border-t-[3px] border-t-accent/40">
           <CardHeader>
             <CardTitle>Upcoming Exams</CardTitle>
@@ -148,7 +128,7 @@ export function TeacherDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stats.upcomingExams.map((ex) => (
+                {upcomingExams.map((ex: { exam_id: number; course_name: string; exam_date: string; exam_type: string }) => (
                   <TableRow key={ex.exam_id}>
                     <TableCell>{ex.course_name}</TableCell>
                     <TableCell className="capitalize">{ex.exam_type}</TableCell>

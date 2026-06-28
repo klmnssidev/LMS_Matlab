@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -16,17 +15,8 @@ import {
 import { Users, GraduationCap, BookOpen, Building2, ClipboardList } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { SkeletonStatCards } from "@/components/loading-skeletons";
-
-type DashboardStats = {
-  totalStudents: number;
-  totalTeachers: number;
-  totalCourses: number;
-  totalDepartments: number;
-  activeEnrollments: number;
-  studentsByDepartment: { department_name: string; count: number }[];
-  enrollmentTrend: { semester_name: string; count: number }[];
-  gradeDistribution: { grade: string; count: number }[];
-};
+import { useAdminStats } from "@/features/dashboard/hooks";
+import type { DashboardStats } from "@/server/services/stats.service";
 
 const CHART_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "var(--primary)"];
 
@@ -45,25 +35,9 @@ function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label
 }
 
 export function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: stats, isLoading, error } = useAdminStats();
 
-  useEffect(() => {
-    fetch("/api/stats")
-      .then(async (res) => {
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || `Request failed (${res.status})`);
-        }
-        return res.json();
-      })
-      .then(setStats)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -76,7 +50,7 @@ export function AdminDashboard() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-destructive">{error}</p>
+        <p className="text-destructive">{error?.message ?? "Failed to load"}</p>
       </div>
     );
   }
@@ -142,7 +116,7 @@ export function AdminDashboard() {
                   outerRadius={100}
                   label={({ payload }) => `${payload.grade}: ${payload.count}`}
                 >
-                  {stats.gradeDistribution.map((_, i) => (
+                  {stats.gradeDistribution.map((_item: { grade: string; count: number }, i: number) => (
                     <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Pie>
