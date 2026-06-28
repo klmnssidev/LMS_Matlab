@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,48 +29,28 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonTable } from "@/components/loading-skeletons";
-import type { TeacherWithDept } from "./types";
-
-const departmentItems = [
-  { label: "All Departments", value: "" },
-  { label: "Computer Science", value: "1" },
-  { label: "Information Technology", value: "2" },
-  { label: "Information Systems", value: "3" },
-  { label: "Software Engineering", value: "4" },
-  { label: "Cyber Security", value: "5" },
-  { label: "Data Science & AI", value: "6" },
-];
+import { useTeachers } from "@/features/teachers/hooks/use-teachers";
+import { useDepartments } from "@/shared/hooks/use-departments";
 
 export function TeacherList() {
-  const [teachers, setTeachers] = useState<TeacherWithDept[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
+  const { data: departments = [] } = useDepartments();
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (deptFilter) params.set("department_id", deptFilter);
+  const { data, isLoading, error } = useTeachers({
+    search: search || undefined,
+    department_id: deptFilter ? Number(deptFilter) : undefined,
+  });
 
-      if (!cancelled) setLoading(true);
-      if (!cancelled) setError(null);
+  const teachers = data?.data ?? [];
 
-      try {
-        const res = await fetch(`/api/teachers?${params}`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        if (!cancelled) setTeachers(data);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [search, deptFilter]);
+  const departmentItems = [
+    { label: "All Departments", value: "" },
+    ...departments.map((d) => ({
+      label: d.departmentName,
+      value: String(d.departmentId),
+    })),
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -106,10 +86,10 @@ export function TeacherList() {
         </Select>
       </div>
 
-      {loading && <SkeletonTable rows={5} cols={6} />}
-      {error && <p className="text-destructive">{error}</p>}
+      {isLoading && <SkeletonTable rows={5} cols={6} />}
+      {error && <p className="text-destructive">{error.message}</p>}
 
-      {!loading && !error && teachers.length === 0 && (
+      {!isLoading && !error && teachers.length === 0 && (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon"><Search /></EmptyMedia>
@@ -119,7 +99,7 @@ export function TeacherList() {
         </Empty>
       )}
 
-      {!loading && !error && teachers.length > 0 && (
+      {!isLoading && !error && teachers.length > 0 && (
         <Table>
           <TableHeader>
             <TableRow>
@@ -133,14 +113,14 @@ export function TeacherList() {
           </TableHeader>
           <TableBody>
             {teachers.map((t) => (
-              <TableRow key={t.teacher_id}>
-                <TableCell className="font-medium">{t.teacher_name}</TableCell>
+              <TableRow key={t.teacherId}>
+                <TableCell className="font-medium">{t.teacherName}</TableCell>
                 <TableCell className="text-muted-foreground">{t.email}</TableCell>
-                <TableCell>{t.department_code}</TableCell>
-                <TableCell className="text-muted-foreground">{t.academic_rank}</TableCell>
-                <TableCell className="text-muted-foreground">{t.hire_date}</TableCell>
+                <TableCell>{t.departmentCode}</TableCell>
+                <TableCell className="text-muted-foreground">{t.academicRank}</TableCell>
+                <TableCell className="text-muted-foreground">{t.hireDate}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="link" size="sm" render={<Link href={`/teachers/${t.teacher_id}`} />}>
+                  <Button variant="link" size="sm" render={<Link href={`/teachers/${t.teacherId}`} />}>
                     View
                   </Button>
                 </TableCell>

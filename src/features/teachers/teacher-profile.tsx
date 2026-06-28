@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Mail, Phone, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,53 +20,15 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonProfile } from "@/components/loading-skeletons";
-import type { TeacherWithDept } from "./types";
-
-type CourseOffering = {
-  offering_id: number;
-  course_code: string;
-  course_name: string;
-  semester_name: string;
-  room_code: string;
-  section_name: string;
-};
+import { useTeacher } from "@/features/teachers/hooks/use-teachers";
 
 export function TeacherProfile({ id }: { id: number }) {
-  const [teacher, setTeacher] = useState<TeacherWithDept | null>(null);
-  const [offerings, setOfferings] = useState<CourseOffering[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: teacher, isLoading, error } = useTeacher(id);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      if (!cancelled) setLoading(true);
-      if (!cancelled) setError(null);
+  if (isLoading) return <SkeletonProfile />;
+  if (error || !teacher) return <p className="text-destructive">{error?.message || "Not found"}</p>;
 
-      try {
-        const [teacherRes, offeringsRes] = await Promise.all([
-          fetch(`/api/teachers?id=${id}`),
-          fetch(`/api/course-offerings?teacher_id=${id}`),
-        ]);
-        if (!teacherRes.ok) throw new Error("Teacher not found");
-        const teacherData = await teacherRes.json();
-        if (!cancelled) setTeacher(teacherData);
-
-        if (offeringsRes.ok) {
-          const offeringsData = await offeringsRes.json();
-          if (!cancelled) setOfferings(offeringsData);
-        }
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [id]);
-
-  if (loading) return <SkeletonProfile />;
-  if (error || !teacher) return <p className="text-destructive">{error || "Not found"}</p>;
+  const offerings = teacher.courseOfferings ?? [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,7 +36,7 @@ export function TeacherProfile({ id }: { id: number }) {
         <Button variant="ghost" size="icon" render={<Link href="/teachers" />}>
           <ArrowLeft />
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">{teacher.teacher_name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{teacher.teacherName}</h1>
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
@@ -84,11 +45,11 @@ export function TeacherProfile({ id }: { id: number }) {
             <CardContent className="flex flex-col gap-4 pt-6">
               <div className="flex items-center gap-3">
                 <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-                  {teacher.teacher_name.charAt(0)}
+                  {teacher.teacherName.charAt(0)}
                 </div>
                 <div>
-                  <p className="font-semibold text-lg">{teacher.teacher_name}</p>
-                  <p className="text-sm text-muted-foreground">{teacher.department_name}</p>
+                  <p className="font-semibold text-lg">{teacher.teacherName}</p>
+                  <p className="text-sm text-muted-foreground">{teacher.departmentName}</p>
                 </div>
               </div>
 
@@ -105,13 +66,13 @@ export function TeacherProfile({ id }: { id: number }) {
                 )}
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="size-4" />
-                  <span>Hired: {teacher.hire_date}</span>
+                  <span>Hired: {teacher.hireDate}</span>
                 </div>
               </div>
 
               <div className="rounded-lg bg-muted p-3 text-center">
                 <p className="text-xs text-muted-foreground">Academic Rank</p>
-                <p className="font-semibold">{teacher.academic_rank}</p>
+                <p className="font-semibold">{teacher.academicRank}</p>
               </div>
             </CardContent>
           </Card>
@@ -143,13 +104,13 @@ export function TeacherProfile({ id }: { id: number }) {
                   </TableHeader>
                   <TableBody>
                     {offerings.map((o) => (
-                      <TableRow key={o.offering_id}>
+                      <TableRow key={o.offeringId}>
                         <TableCell>
-                          <span className="font-medium">{o.course_code}</span> — {o.course_name}
+                          <span className="font-medium">{o.courseCode}</span> — {o.courseName}
                         </TableCell>
-                        <TableCell>{o.section_name}</TableCell>
-                        <TableCell className="text-muted-foreground">{o.semester_name}</TableCell>
-                        <TableCell className="text-muted-foreground">{o.room_code}</TableCell>
+                        <TableCell>{o.sectionName}</TableCell>
+                        <TableCell className="text-muted-foreground">{o.semesterName}</TableCell>
+                        <TableCell className="text-muted-foreground">{o.roomCode}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
