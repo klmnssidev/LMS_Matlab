@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -15,20 +16,33 @@ import {
   Trophy,
 } from "lucide-react";
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/students", label: "Students", icon: Users },
-  { href: "/teachers", label: "Teachers", icon: GraduationCap },
-  { href: "/courses", label: "Courses", icon: BookOpen },
-  { href: "/enrollments", label: "Enrollments", icon: ClipboardList },
-  { href: "/attendance", label: "Attendance", icon: CalendarCheck },
-  { href: "/posters", label: "Posters", icon: ImageIcon },
-  { href: "/my-courses", label: "My Courses", icon: BookMarked },
-  { href: "/my-grades", label: "My Grades", icon: Trophy },
+type Role = "Admin" | "Teacher" | "Student" | null;
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  roles: Role[];
+};
+
+const allNavItems: NavItem[] = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["Admin", "Teacher", "Student"] },
+  { href: "/students", label: "Students", icon: Users, roles: ["Admin", "Teacher"] },
+  { href: "/teachers", label: "Teachers", icon: GraduationCap, roles: ["Admin"] },
+  { href: "/courses", label: "Courses", icon: BookOpen, roles: ["Admin", "Teacher", "Student"] },
+  { href: "/enrollments", label: "Enrollments", icon: ClipboardList, roles: ["Admin", "Teacher"] },
+  { href: "/attendance", label: "Attendance", icon: CalendarCheck, roles: ["Admin", "Teacher"] },
+  { href: "/posters", label: "Posters", icon: ImageIcon, roles: ["Admin", "Teacher", "Student"] },
+  { href: "/my-courses", label: "My Courses", icon: BookMarked, roles: ["Student"] },
+  { href: "/my-grades", label: "My Grades", icon: Trophy, roles: ["Student"] },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
+  const role = (user?.publicMetadata?.role as Role) ?? "Student";
+
+  const navItems = allNavItems.filter((item) => item.roles.includes(role));
 
   return (
     <aside className="w-64 border-r bg-background">
@@ -54,6 +68,9 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="absolute bottom-4 left-4 text-xs text-muted-foreground">
+        Role: {role}
+      </div>
     </aside>
   );
 }
