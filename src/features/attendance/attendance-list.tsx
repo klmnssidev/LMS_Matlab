@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonTable } from "@/components/loading-skeletons";
-import type { AttendanceJoined } from "./types";
+import { useAttendance } from "@/features/attendance/hooks/use-attendance";
 
 function badgeVariant(status: string) {
   switch (status) {
@@ -34,37 +34,17 @@ function badgeVariant(status: string) {
 }
 
 export function AttendanceList() {
-  const [records, setRecords] = useState<AttendanceJoined[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 20;
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      const params = new URLSearchParams();
-      if (startDate) params.set("start_date", startDate);
-      if (endDate) params.set("end_date", endDate);
+  const { data, isLoading, error } = useAttendance({
+    start_date: startDate || undefined,
+    end_date: endDate || undefined,
+  });
 
-      if (!cancelled) setLoading(true);
-      if (!cancelled) setError(null);
-      try {
-        const res = await fetch(`/api/attendance?${params}`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        if (!cancelled) setRecords(data);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [startDate, endDate, offset]);
-
+  const records = data?.data ?? [];
   const displayed = records.slice(offset, offset + limit);
 
   return (
@@ -94,10 +74,10 @@ export function AttendanceList() {
         </div>
       </div>
 
-      {loading && <SkeletonTable rows={5} cols={6} />}
-      {error && <p className="text-destructive">{error}</p>}
+      {isLoading && <SkeletonTable rows={5} cols={6} />}
+      {error && <p className="text-destructive">{error.message}</p>}
 
-      {!loading && !error && displayed.length === 0 && (
+      {!isLoading && !error && displayed.length === 0 && (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon" />
@@ -107,7 +87,7 @@ export function AttendanceList() {
         </Empty>
       )}
 
-      {!loading && !error && displayed.length > 0 && (
+      {!isLoading && !error && displayed.length > 0 && (
         <>
           <Table>
             <TableHeader>
@@ -121,10 +101,10 @@ export function AttendanceList() {
             </TableHeader>
             <TableBody>
               {displayed.map((r) => (
-                <TableRow key={r.attendance_id}>
-                  <TableCell className="font-medium">{r.student_name}</TableCell>
-                  <TableCell className="text-muted-foreground">{r.course_name}</TableCell>
-                  <TableCell>{r.attendance_date}</TableCell>
+                <TableRow key={r.attendanceId}>
+                  <TableCell className="font-medium">{r.studentName}</TableCell>
+                  <TableCell className="text-muted-foreground">{r.courseName}</TableCell>
+                  <TableCell>{r.attendanceDate}</TableCell>
                   <TableCell>
                     <Badge variant={badgeVariant(r.status)}>{r.status}</Badge>
                   </TableCell>

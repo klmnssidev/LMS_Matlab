@@ -1,2 +1,2 @@
-export type { Attendance, AttendanceJoined, CreateAttendance } from "@/services/attendance";
-export { AttendanceSchema, AttendanceJoinedSchema, CreateAttendanceSchema } from "@/services/attendance";
+export type { Attendance, AttendanceJoined, CreateAttendance, UpdateAttendance } from "@/server/schemas/attendance.schema";
+export { AttendanceSchema, AttendanceJoinedSchema, CreateAttendanceSchema, UpdateAttendanceSchema } from "@/server/schemas/attendance.schema";
