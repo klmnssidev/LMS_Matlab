@@ -10,7 +10,7 @@ export default function DashboardLayout({
     <div className="flex h-screen">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <header className="h-14 border-b flex items-center justify-end px-6">
+        <header className="h-14 border-b flex items-center justify-end px-6 bg-card">
           <UserButton />
         </header>
         <main className="flex-1 overflow-auto p-6">{children}</main>

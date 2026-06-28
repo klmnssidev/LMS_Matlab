@@ -2,7 +2,25 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, GraduationCap } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+import { SkeletonProfile } from "@/components/loading-skeletons";
 import type { CourseWithDept } from "./types";
 
 type Offering = {
@@ -47,15 +65,15 @@ export function CourseDetail({ id }: { id: number }) {
     return () => { cancelled = true; };
   }, [id]);
 
-  if (loading) return <p className="text-muted-foreground">Loading...</p>;
+  if (loading) return <SkeletonProfile hasAvatar={false} />;
   if (error || !course) return <p className="text-destructive">{error || "Not found"}</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
-        <Link href="/courses" className="text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
+        <Button variant="ghost" size="icon" render={<Link href="/courses" />}>
+          <ArrowLeft />
+        </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{course.course_name}</h1>
           <p className="text-sm text-muted-foreground font-mono">{course.course_code}</p>
@@ -63,63 +81,73 @@ export function CourseDetail({ id }: { id: number }) {
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        <div className="lg:col-span-1 space-y-4">
-          <div className="rounded-xl border bg-card p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-primary" />
+        <div className="lg:col-span-1 flex flex-col gap-4">
+          <Card>
+            <CardContent className="flex flex-col gap-4 pt-6">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <span className="text-lg font-bold text-primary">
+                    {course.course_code.charAt(0)}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Department</p>
+                  <p className="font-medium">{course.department_name}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Department</p>
-                <p className="font-medium">{course.department_name}</p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-lg bg-muted p-3">
-                <p className="text-xs text-muted-foreground">Credit Hours</p>
-                <p className="font-semibold text-lg">{course.credit_hours}</p>
+              <div className="grid grid-cols-2 gap-3 text-center">
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-xs text-muted-foreground">Credit Hours</p>
+                  <p className="font-semibold text-lg">{course.credit_hours}</p>
+                </div>
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-xs text-muted-foreground">Offerings</p>
+                  <p className="font-semibold text-lg">{offerings.length}</p>
+                </div>
               </div>
-              <div className="rounded-lg bg-muted p-3">
-                <p className="text-xs text-muted-foreground">Offerings</p>
-                <p className="font-semibold text-lg">{offerings.length}</p>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-xl border bg-card p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <GraduationCap className="h-5 w-5" />
-              Course Offerings
-            </h2>
-
-            {offerings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No offerings available.</p>
-            ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left px-3 py-2 font-medium">Section</th>
-                    <th className="text-left px-3 py-2 font-medium">Teacher</th>
-                    <th className="text-left px-3 py-2 font-medium">Semester</th>
-                    <th className="text-left px-3 py-2 font-medium">Room</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {offerings.map((o) => (
-                    <tr key={o.offering_id} className="border-b last:border-0 hover:bg-muted/30">
-                      <td className="px-3 py-2 font-medium">{o.section_name}</td>
-                      <td className="px-3 py-2">{o.teacher_name}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{o.semester_name}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{o.room_code}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Course Offerings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {offerings.length === 0 ? (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon" />
+                    <EmptyTitle>No offerings available</EmptyTitle>
+                    <EmptyDescription>This course has no scheduled offerings yet.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Section</TableHead>
+                      <TableHead>Teacher</TableHead>
+                      <TableHead>Semester</TableHead>
+                      <TableHead>Room</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {offerings.map((o) => (
+                      <TableRow key={o.offering_id}>
+                        <TableCell className="font-medium">{o.section_name}</TableCell>
+                        <TableCell>{o.teacher_name}</TableCell>
+                        <TableCell className="text-muted-foreground">{o.semester_name}</TableCell>
+                        <TableCell className="text-muted-foreground">{o.room_code}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

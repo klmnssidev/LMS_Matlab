@@ -1,3 +1,5 @@
+import { MyCourses } from "@/features/courses/my-courses";
+
 export default function MyCoursesPage() {
-  return <div><h1 className="text-3xl font-bold">My Courses</h1></div>;
+  return <MyCourses />;
 }

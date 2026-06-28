@@ -1,3 +1,5 @@
+import { AttendanceList } from "@/features/attendance/attendance-list";
+
 export default function AttendancePage() {
-  return <div><h1 className="text-3xl font-bold">Attendance</h1></div>;
+  return <AttendanceList />;
 }

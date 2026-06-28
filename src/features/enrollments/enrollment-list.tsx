@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -30,30 +29,28 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonTable } from "@/components/loading-skeletons";
-import type { StudentWithDept } from "./types";
+import type { EnrollmentJoined } from "./types";
 
 const statusItems = [
   { label: "All Status", value: "" },
   { label: "Active", value: "Active" },
-  { label: "Graduated", value: "Graduated" },
-  { label: "Suspended", value: "Suspended" },
-  { label: "Withdrawn", value: "Withdrawn" },
+  { label: "Completed", value: "Completed" },
+  { label: "Dropped", value: "Dropped" },
 ];
 
 function badgeVariant(status: string) {
   switch (status) {
     case "Active": return "default" as const;
-    case "Graduated": return "secondary" as const;
-    case "Suspended": return "outline" as const;
-    default: return "destructive" as const;
+    case "Completed": return "secondary" as const;
+    case "Dropped": return "destructive" as const;
+    default: return "outline" as const;
   }
 }
 
-export function StudentList() {
-  const [students, setStudents] = useState<StudentWithDept[]>([]);
+export function EnrollmentList() {
+  const [enrollments, setEnrollments] = useState<EnrollmentJoined[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 20;
@@ -62,19 +59,14 @@ export function StudentList() {
     let cancelled = false;
     Promise.resolve().then(async () => {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
-      params.set("limit", String(limit));
-      params.set("offset", String(offset));
-
       if (!cancelled) setLoading(true);
       if (!cancelled) setError(null);
-
       try {
-        const res = await fetch(`/api/students?${params}`);
+        const res = await fetch(`/api/enrollments?${params}`);
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        if (!cancelled) setStudents(data);
+        if (!cancelled) setEnrollments(data);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
       } finally {
@@ -82,28 +74,17 @@ export function StudentList() {
       }
     });
     return () => { cancelled = true; };
-  }, [search, statusFilter, offset]);
+  }, [statusFilter, offset]);
+
+  const displayed = enrollments.slice(offset, offset + limit);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Students</h1>
-        <Button render={<Link href="/students/new" />}>
-          <Plus data-icon="inline-start" />
-          Add Student
-        </Button>
+        <h1 className="text-3xl font-bold tracking-tight">Enrollments</h1>
       </div>
 
       <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-          <Input
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setOffset(0); }}
-            className="pl-8"
-          />
-        </div>
         <Select
           items={statusItems}
           value={statusFilter}
@@ -127,44 +108,47 @@ export function StudentList() {
       {loading && <SkeletonTable rows={5} cols={7} />}
       {error && <p className="text-destructive">{error}</p>}
 
-      {!loading && !error && students.length === 0 && (
+      {!loading && !error && displayed.length === 0 && (
         <Empty>
           <EmptyHeader>
-            <EmptyMedia variant="icon"><Search /></EmptyMedia>
-            <EmptyTitle>No students found</EmptyTitle>
-            <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>
+            <EmptyMedia variant="icon" />
+            <EmptyTitle>No enrollments found</EmptyTitle>
+            <EmptyDescription>Try adjusting your filters.</EmptyDescription>
           </EmptyHeader>
         </Empty>
       )}
 
-      {!loading && !error && students.length > 0 && (
+      {!loading && !error && displayed.length > 0 && (
         <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Gender</TableHead>
-                <TableHead>Year</TableHead>
+                <TableHead>Student</TableHead>
+                <TableHead>Course</TableHead>
+                <TableHead>Section</TableHead>
+                <TableHead>Semester</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Grade</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((s) => (
-                <TableRow key={s.student_id}>
-                  <TableCell className="font-medium">{s.student_name}</TableCell>
-                  <TableCell className="text-muted-foreground">{s.email}</TableCell>
-                  <TableCell>{s.department_code}</TableCell>
-                  <TableCell>{s.gender}</TableCell>
-                  <TableCell>{s.admission_year}</TableCell>
+              {displayed.map((e) => (
+                <TableRow key={e.enrollment_id}>
+                  <TableCell className="font-medium">{e.student_name}</TableCell>
                   <TableCell>
-                    <Badge variant={badgeVariant(s.status)}>{s.status}</Badge>
+                    <span className="text-xs font-mono text-muted-foreground">{e.course_code}</span>{" "}
+                    {e.course_name}
                   </TableCell>
+                  <TableCell className="text-muted-foreground">{e.section_name}</TableCell>
+                  <TableCell className="text-muted-foreground">{e.semester_name}</TableCell>
+                  <TableCell>
+                    <Badge variant={badgeVariant(e.status)}>{e.status}</Badge>
+                  </TableCell>
+                  <TableCell>{e.final_grade ?? "—"}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="link" size="sm" render={<Link href={`/students/${s.student_id}`} />}>
-                      View
+                    <Button variant="link" size="sm" render={<Link href={`/students/${e.student_id}`} />}>
+                      View Student
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -174,7 +158,7 @@ export function StudentList() {
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {offset + 1}–{offset + students.length}
+              Showing {offset + 1}–{Math.min(offset + limit, enrollments.length)} of {enrollments.length}
             </p>
             <div className="flex gap-2">
               <Button
@@ -190,7 +174,7 @@ export function StudentList() {
                 variant="outline"
                 size="sm"
                 onClick={() => setOffset(offset + limit)}
-                disabled={students.length < limit}
+                disabled={offset + limit >= enrollments.length}
               >
                 Next
                 <ChevronRight data-icon="inline-end" />

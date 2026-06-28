@@ -14,6 +14,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Users, GraduationCap, BookOpen, Building2, ClipboardList } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { SkeletonStatCards } from "@/components/loading-skeletons";
 
 type DashboardStats = {
   totalStudents: number;
@@ -30,15 +32,15 @@ const CHART_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var
 
 function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number }) {
   return (
-    <div className="rounded-xl border bg-card p-4 flex items-center gap-4 shadow-sm">
-      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-        <Icon className="h-5 w-5 text-primary" />
+    <Card className="flex-row items-center p-4 border-l-[3px] border-l-accent">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+        <Icon className="size-5 text-accent" />
       </div>
       <div>
         <p className="text-sm text-muted-foreground">{label}</p>
         <p className="text-2xl font-bold">{value.toLocaleString()}</p>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -63,16 +65,16 @@ export function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Loading statistics...</p>
+        <SkeletonStatCards />
       </div>
     );
   }
 
   if (error || !stats) {
     return (
-      <div className="space-y-6">
+      <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-destructive">{error}</p>
       </div>
@@ -80,7 +82,7 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -92,52 +94,64 @@ export function AdminDashboard() {
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Students by Department</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={stats.studentsByDepartment}>
-              <XAxis dataKey="department_name" tick={{ fontSize: 12 }} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <Card className="border-t-[3px] border-t-accent/40">
+          <CardHeader>
+            <CardTitle>Students by Department</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={stats.studentsByDepartment}>
+                <XAxis dataKey="department_name" tick={{ fontSize: 12 }} />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Enrollment Trend</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={stats.enrollmentTrend}>
-              <XAxis dataKey="semester_name" tick={{ fontSize: 12 }} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Enrollment Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={stats.enrollmentTrend}>
+                <XAxis dataKey="semester_name" tick={{ fontSize: 12 }} />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Grade Distribution</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={stats.gradeDistribution}
-                dataKey="count"
-                nameKey="grade"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label={({ payload }) => `${payload.grade}: ${payload.count}`}
-              >
-                {stats.gradeDistribution.map((_, i) => (
-                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Grade Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={stats.gradeDistribution}
+                  dataKey="count"
+                  nameKey="grade"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={({ payload }) => `${payload.grade}: ${payload.count}`}
+                >
+                  {stats.gradeDistribution.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+import { PosterGallery } from "@/features/posters/poster-gallery";
+
 export default function PostersPage() {
-  return <div><h1 className="text-3xl font-bold">Posters</h1></div>;
+  return <PosterGallery />;
 }
