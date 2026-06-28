@@ -14,24 +14,63 @@ export const CreateCourseSchema = CourseSchema.omit({ course_id: true });
 export type Course = z.infer<typeof CourseSchema>;
 export type CreateCourse = z.infer<typeof CreateCourseSchema>;
 
-export async function listCourses(options?: { department_id?: number }): Promise<Course[]> {
+export const CourseWithDeptSchema = CourseSchema.extend({
+  department_name: z.string(),
+  department_code: z.string(),
+});
+
+export type CourseWithDept = z.infer<typeof CourseWithDeptSchema>;
+
+export async function listCourses(options?: {
+  department_id?: number;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<CourseWithDept[]> {
   const conditions: string[] = [];
   const params: unknown[] = [];
   let idx = 1;
 
   if (options?.department_id) {
-    conditions.push(`department_id = $${idx++}`);
+    conditions.push(`c.department_id = $${idx++}`);
     params.push(options.department_id);
+  }
+  if (options?.search) {
+    conditions.push(`(c.course_name ILIKE $${idx} OR c.course_code ILIKE $${idx})`);
+    params.push(`%${options.search}%`);
+    idx++;
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  const { rows } = await db.query(`SELECT * FROM courses ${where} ORDER BY course_name`, params);
-  return rows.map((r) => CourseSchema.parse(r));
+  let sql = `
+    SELECT c.*, d.department_name, d.department_code
+    FROM courses c
+    JOIN departments d ON d.department_id = c.department_id
+    ${where}
+    ORDER BY c.course_name
+  `;
+  if (options?.limit) {
+    sql += ` LIMIT $${idx++}`;
+    params.push(options.limit);
+  }
+  if (options?.offset) {
+    sql += ` OFFSET $${idx++}`;
+    params.push(options.offset);
+  }
+
+  const { rows } = await db.query(sql, params);
+  return rows.map((r) => CourseWithDeptSchema.parse(r));
 }
 
-export async function getCourse(id: number): Promise<Course | null> {
-  const { rows } = await db.query("SELECT * FROM courses WHERE course_id = $1", [id]);
-  return rows.length ? CourseSchema.parse(rows[0]) : null;
+export async function getCourse(id: number): Promise<CourseWithDept | null> {
+  const { rows } = await db.query(
+    `SELECT c.*, d.department_name, d.department_code
+     FROM courses c
+     JOIN departments d ON d.department_id = c.department_id
+     WHERE c.course_id = $1`,
+    [id]
+  );
+  return rows.length ? CourseWithDeptSchema.parse(rows[0]) : null;
 }
 
 export async function createCourse(data: CreateCourse): Promise<Course> {
@@ -55,7 +94,7 @@ export async function updateCourse(id: number, data: Partial<CreateCourse>): Pro
     }
   }
 
-  if (!fields.length) return getCourse(id);
+  if (!fields.length) return null;
 
   params.push(id);
   const { rows } = await db.query(
