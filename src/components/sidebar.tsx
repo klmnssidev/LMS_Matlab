@@ -39,8 +39,35 @@ const allNavItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const role = (user?.publicMetadata?.role as Role) ?? "Student";
+
+  if (!isLoaded) {
+    return (
+      <aside className="w-64 border-r bg-background">
+        <div className="p-4 font-bold text-lg border-b">Uni Manager</div>
+        <nav className="p-2 space-y-1">
+          {allNavItems.filter((item) => item.roles.includes("Student")).map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                  active ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+    );
+  }
 
   const navItems = allNavItems.filter((item) => item.roles.includes(role));
 
