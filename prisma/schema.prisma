@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Department {
+  departmentId   Int          @id @default(autoincrement()) @map("department_id")
+  departmentCode String       @unique @map("department_code") @db.VarChar(10)
+  departmentName String       @map("department_name") @db.VarChar(100)
+  facultyName    String       @map("faculty_name") @db.VarChar(100)
+  createdAt      DateTime?    @default(now()) @map("created_at") @db.Timestamp(6)
+
+  courses  Course[]
+  students Student[]
+  teachers Teacher[]
+
+  @@map("departments")
+}
+
+model Student {
+  studentId     Int          @id @default(autoincrement()) @map("student_id")
+  departmentId  Int          @map("department_id")
+  studentName   String       @map("student_name") @db.VarChar(120)
+  email         String       @unique @map("email") @db.VarChar(120)
+  phone         String?      @map("phone") @db.VarChar(30)
+  gender        String       @map("gender") @db.VarChar(10)
+  dateOfBirth   DateTime?    @map("date_of_birth") @db.Date
+  admissionYear Int          @map("admission_year")
+  status        String?      @default("Active") @map("status") @db.VarChar(20)
+
+  department  Department    @relation(fields: [departmentId], references: [departmentId])
+  enrollments Enrollment[]
+
+  @@map("students")
+}
+
+model Teacher {
+  teacherId    Int          @id @default(autoincrement()) @map("teacher_id")
+  departmentId Int          @map("department_id")
+  teacherName  String       @map("teacher_name") @db.VarChar(120)
+  email        String       @unique @map("email") @db.VarChar(120)
+  phone        String?      @map("phone") @db.VarChar(30)
+  academicRank String       @map("academic_rank") @db.VarChar(50)
+  hireDate     DateTime     @map("hire_date") @db.Date
+
+  department       Department       @relation(fields: [departmentId], references: [departmentId])
+  courseOfferings  CourseOffering[]
+
+  @@map("teachers")
+}
+
+model Course {
+  courseId     Int    @id @default(autoincrement()) @map("course_id")
+  departmentId Int    @map("department_id")
+  courseCode   String @unique @map("course_code") @db.VarChar(20)
+  courseName   String @map("course_name") @db.VarChar(150)
+  creditHours  Int    @map("credit_hours")
+
+  department      Department       @relation(fields: [departmentId], references: [departmentId])
+  courseOfferings CourseOffering[]
+
+  @@map("courses")
+}
+
+model Semester {
+  semesterId   Int      @id @default(autoincrement()) @map("semester_id")
+  semesterName String   @map("semester_name") @db.VarChar(50)
+  academicYear String   @map("academic_year") @db.VarChar(20)
+  startDate    DateTime @map("start_date") @db.Date
+  endDate      DateTime @map("end_date") @db.Date
+
+  courseOfferings CourseOffering[]
+
+  @@map("semesters")
+}
+
+model Classroom {
+  classroomId Int    @id @default(autoincrement()) @map("classroom_id")
+  roomCode    String @unique @map("room_code") @db.VarChar(20)
+  building    String @map("building") @db.VarChar(100)
+  capacity    Int    @map("capacity")
+
+  courseOfferings CourseOffering[]
+
+  @@map("classrooms")
+}
+
+model CourseOffering {
+  offeringId   Int    @id @default(autoincrement()) @map("offering_id")
+  courseId     Int    @map("course_id")
+  teacherId    Int    @map("teacher_id")
+  semesterId   Int    @map("semester_id")
+  classroomId  Int    @map("classroom_id")
+  sectionName  String @default("A") @map("section_name") @db.VarChar(10)
+  maxStudents  Int    @default(40) @map("max_students")
+
+  course      Course      @relation(fields: [courseId], references: [courseId])
+  teacher     Teacher     @relation(fields: [teacherId], references: [teacherId])
+  semester    Semester    @relation(fields: [semesterId], references: [semesterId])
+  classroom   Classroom   @relation(fields: [classroomId], references: [classroomId])
+  enrollments Enrollment[]
+  exams       Exam[]
+
+  @@unique([courseId, semesterId, sectionName])
+  @@map("course_offerings")
+}
+
+model Enrollment {
+  enrollmentId   Int      @id @default(autoincrement()) @map("enrollment_id")
+  studentId      Int      @map("student_id")
+  offeringId     Int      @map("offering_id")
+  enrollmentDate DateTime @map("enrollment_date") @db.Date
+  status         String?  @default("Active") @map("status") @db.VarChar(10)
+  finalGrade     String?  @map("final_grade") @db.VarChar(5)
+
+  student     Student      @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  offering    CourseOffering @relation(fields: [offeringId], references: [offeringId])
+  attendance  Attendance[]
+  examResults ExamResult[]
+
+  @@unique([studentId, offeringId])
+  @@map("enrollments")
+}
+
+model Attendance {
+  attendanceId   Int      @id @default(autoincrement()) @map("attendance_id")
+  enrollmentId   Int      @map("enrollment_id")
+  attendanceDate DateTime @map("attendance_date") @db.Date
+  status         String   @map("status") @db.VarChar(10)
+  remarks        String?  @map("remarks") @db.VarChar(255)
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [enrollmentId], onDelete: Cascade)
+
+  @@unique([enrollmentId, attendanceDate])
+  @@map("attendance")
+}
+
+model Exam {
+  examId     Int      @id @default(autoincrement()) @map("exam_id")
+  offeringId Int      @map("offering_id")
+  examType   String   @map("exam_type") @db.VarChar(10)
+  examDate   DateTime @map("exam_date") @db.Date
+  maxScore   Decimal  @map("max_score") @db.Decimal(5, 2)
+
+  offering     CourseOffering @relation(fields: [offeringId], references: [offeringId], onDelete: Cascade)
+  examResults  ExamResult[]
+
+  @@map("exams")
+}
+
+model ExamResult {
+  resultId     Int     @id @default(autoincrement()) @map("result_id")
+  examId       Int     @map("exam_id")
+  enrollmentId Int     @map("enrollment_id")
+  score        Decimal @map("score") @db.Decimal(5, 2)
+
+  exam       Exam       @relation(fields: [examId], references: [examId], onDelete: Cascade)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [enrollmentId], onDelete: Cascade)
+
+  @@unique([examId, enrollmentId])
+  @@map("exam_results")
+}
+
+model Poster {
+  posterId  Int       @id @default(autoincrement()) @map("poster_id")
+  title     String    @map("title") @db.VarChar(200)
+  imageData Bytes     @map("image_data")
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("posters")
+}

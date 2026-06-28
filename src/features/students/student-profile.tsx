@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Mail, Phone, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,15 +22,15 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonProfile } from "@/components/loading-skeletons";
-import type { StudentWithDept } from "./types";
+import { useStudent } from "@/features/students/hooks/use-students";
 
 type Enrollment = {
-  enrollment_id: number;
-  course_name: string;
-  course_code: string;
-  semester_name: string;
+  enrollmentId: number;
+  courseName: string;
+  courseCode: string;
+  semesterName: string;
   status: string;
-  final_grade: string | null;
+  finalGrade: string | null;
 };
 
 function badgeVariant(status: string) {
@@ -42,32 +42,11 @@ function badgeVariant(status: string) {
 }
 
 export function StudentProfile({ id }: { id: number }) {
-  const [student, setStudent] = useState<StudentWithDept | null>(null);
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: student, isLoading, error } = useStudent(id);
+  const params = useParams();
 
-  useEffect(() => {
-    Promise.all([
-      fetch(`/api/students?id=${id}`).then((r) => {
-        if (!r.ok) throw new Error("Student not found");
-        return r.json();
-      }),
-      fetch(`/api/enrollments?student_id=${id}`).then((r) => {
-        if (!r.ok) return [];
-        return r.json();
-      }),
-    ])
-      .then(([studentData, enrollmentData]) => {
-        setStudent(studentData);
-        setEnrollments(enrollmentData);
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  if (loading) return <SkeletonProfile />;
-  if (error || !student) return <p className="text-destructive">{error || "Not found"}</p>;
+  if (isLoading) return <SkeletonProfile />;
+  if (error || !student) return <p className="text-destructive">{error?.message || "Not found"}</p>;
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,7 +54,7 @@ export function StudentProfile({ id }: { id: number }) {
         <Button variant="ghost" size="icon" render={<Link href="/students" />}>
           <ArrowLeft />
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">{student.student_name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{student.studentName}</h1>
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
@@ -84,11 +63,11 @@ export function StudentProfile({ id }: { id: number }) {
             <CardContent className="flex flex-col gap-4 pt-6">
               <div className="flex items-center gap-3">
                 <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-                  {student.student_name.charAt(0)}
+                  {student.studentName.charAt(0)}
                 </div>
                 <div>
-                  <p className="font-semibold text-lg">{student.student_name}</p>
-                  <p className="text-sm text-muted-foreground">{student.department_name}</p>
+                  <p className="font-semibold text-lg">{student.studentName}</p>
+                  <p className="text-sm text-muted-foreground">{student.departmentName}</p>
                 </div>
               </div>
 
@@ -103,10 +82,10 @@ export function StudentProfile({ id }: { id: number }) {
                     <span>{student.phone}</span>
                   </div>
                 )}
-                {student.date_of_birth && (
+                {student.dateOfBirth && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="size-4" />
-                    <span>{student.date_of_birth}</span>
+                    <span>{student.dateOfBirth}</span>
                   </div>
                 )}
               </div>
@@ -118,7 +97,7 @@ export function StudentProfile({ id }: { id: number }) {
                 </div>
                 <div className="rounded-lg bg-muted p-3">
                   <p className="text-xs text-muted-foreground">Year</p>
-                  <p className="font-semibold">{student.admission_year}</p>
+                  <p className="font-semibold">{student.admissionYear}</p>
                 </div>
               </div>
 
@@ -137,40 +116,13 @@ export function StudentProfile({ id }: { id: number }) {
               <CardTitle>Enrollments</CardTitle>
             </CardHeader>
             <CardContent>
-              {enrollments.length === 0 ? (
-                <Empty>
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon" />
-                    <EmptyTitle>No enrollments</EmptyTitle>
-                    <EmptyDescription>This student has no enrollments yet.</EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Semester</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Grade</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {enrollments.map((e) => (
-                      <TableRow key={e.enrollment_id}>
-                        <TableCell>
-                          <span className="font-medium">{e.course_code}</span> — {e.course_name}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{e.semester_name}</TableCell>
-                        <TableCell>
-                          <Badge variant={badgeVariant(e.status)}>{e.status}</Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">{e.final_grade || "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon" />
+                  <EmptyTitle>No enrollments</EmptyTitle>
+                  <EmptyDescription>This student has no enrollments yet.</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             </CardContent>
           </Card>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonTable } from "@/components/loading-skeletons";
-import type { StudentWithDept } from "./types";
+import { useStudents } from "@/features/students/hooks/use-students";
 
 const statusItems = [
   { label: "All Status", value: "" },
@@ -50,39 +50,20 @@ function badgeVariant(status: string) {
 }
 
 export function StudentList() {
-  const [students, setStudents] = useState<StudentWithDept[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 20;
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.resolve().then(async () => {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (statusFilter) params.set("status", statusFilter);
-      params.set("limit", String(limit));
-      params.set("offset", String(offset));
+  const { data, isLoading, error } = useStudents({
+    search: search || undefined,
+    status: statusFilter || undefined,
+    limit,
+    offset,
+  });
 
-      if (!cancelled) setLoading(true);
-      if (!cancelled) setError(null);
-
-      try {
-        const res = await fetch(`/api/students?${params}`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        if (!cancelled) setStudents(data);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [search, statusFilter, offset]);
+  const students = data?.data ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -124,10 +105,10 @@ export function StudentList() {
         </Select>
       </div>
 
-      {loading && <SkeletonTable rows={5} cols={7} />}
-      {error && <p className="text-destructive">{error}</p>}
+      {isLoading && <SkeletonTable rows={5} cols={7} />}
+      {error && <p className="text-destructive">{error.message}</p>}
 
-      {!loading && !error && students.length === 0 && (
+      {!isLoading && !error && students.length === 0 && (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon"><Search /></EmptyMedia>
@@ -137,7 +118,7 @@ export function StudentList() {
         </Empty>
       )}
 
-      {!loading && !error && students.length > 0 && (
+      {!isLoading && !error && students.length > 0 && (
         <>
           <Table>
             <TableHeader>
@@ -153,17 +134,17 @@ export function StudentList() {
             </TableHeader>
             <TableBody>
               {students.map((s) => (
-                <TableRow key={s.student_id}>
-                  <TableCell className="font-medium">{s.student_name}</TableCell>
+                <TableRow key={s.studentId}>
+                  <TableCell className="font-medium">{s.studentName}</TableCell>
                   <TableCell className="text-muted-foreground">{s.email}</TableCell>
-                  <TableCell>{s.department_code}</TableCell>
+                  <TableCell>{s.departmentCode}</TableCell>
                   <TableCell>{s.gender}</TableCell>
-                  <TableCell>{s.admission_year}</TableCell>
+                  <TableCell>{s.admissionYear}</TableCell>
                   <TableCell>
                     <Badge variant={badgeVariant(s.status)}>{s.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="link" size="sm" render={<Link href={`/students/${s.student_id}`} />}>
+                    <Button variant="link" size="sm" render={<Link href={`/students/${s.studentId}`} />}>
                       View
                     </Button>
                   </TableCell>
@@ -174,7 +155,7 @@ export function StudentList() {
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {offset + 1}–{offset + students.length}
+              Showing {offset + 1}–{offset + students.length} of {total}
             </p>
             <div className="flex gap-2">
               <Button
@@ -190,7 +171,7 @@ export function StudentList() {
                 variant="outline"
                 size="sm"
                 onClick={() => setOffset(offset + limit)}
-                disabled={students.length < limit}
+                disabled={offset + limit >= total}
               >
                 Next
                 <ChevronRight data-icon="inline-end" />

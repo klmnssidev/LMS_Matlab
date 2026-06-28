@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,21 +21,21 @@ import {
   FieldLabel,
   FieldError,
 } from "@/components/ui/field";
+import { useCreateStudent } from "@/features/students/hooks/use-students";
+import { useDepartments } from "@/shared/hooks/use-departments";
 
 const formSchema = z.object({
-  student_name: z.string().min(1, "Name is required").max(120),
+  studentName: z.string().min(1, "Name is required").max(120),
   email: z.string().min(1, "Email is required").email("Invalid email"),
   phone: z.string().max(30).optional().or(z.literal("")),
   gender: z.enum(["Male", "Female"]),
-  date_of_birth: z.string().optional().or(z.literal("")),
-  department_id: z.string().min(1, "Department is required"),
-  admission_year: z.string().min(1, "Admission year is required"),
+  dateOfBirth: z.string().optional().or(z.literal("")),
+  departmentId: z.string().min(1, "Department is required"),
+  admissionYear: z.string().min(1, "Admission year is required"),
   status: z.enum(["Active", "Graduated", "Suspended", "Withdrawn"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-type Department = { department_id: number; department_name: string; department_code: string };
 
 const genderItems = [
   { label: "Male", value: "Male" },
@@ -52,47 +51,30 @@ const statusItems = [
 
 export function StudentForm() {
   const router = useRouter();
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { data: departments = [] } = useDepartments();
+  const { mutateAsync: createStudent, isPending } = useCreateStudent();
 
-  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { status: "Active", gender: "Male", admission_year: String(new Date().getFullYear()) },
+    defaultValues: { status: "Active", gender: "Male", admissionYear: String(new Date().getFullYear()) },
   });
 
-  useEffect(() => {
-    fetch("/api/departments")
-      .then((res) => res.json())
-      .then(setDepartments)
-      .catch(() => {});
-  }, []);
-
   async function onSubmit(data: FormValues) {
-    setSubmitError(null);
     try {
-      const body = {
-        student_name: data.student_name,
+      await createStudent({
+        studentName: data.studentName,
         email: data.email,
         phone: data.phone || null,
         gender: data.gender,
-        date_of_birth: data.date_of_birth || null,
-        department_id: Number(data.department_id),
-        admission_year: Number(data.admission_year),
+        dateOfBirth: data.dateOfBirth || null,
+        departmentId: Number(data.departmentId),
+        admissionYear: Number(data.admissionYear),
         status: data.status,
-      };
-      const res = await fetch("/api/students", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Failed to create" }));
-        throw new Error(err.error || "Failed to create");
-      }
       router.push("/students");
       router.refresh();
-    } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Unknown error");
+    } catch {
+      // error handled by mutation state
     }
   }
 
@@ -104,10 +86,10 @@ export function StudentForm() {
         <Card>
           <CardContent className="flex flex-col gap-4 pt-6">
             <FieldGroup>
-              <Field data-invalid={!!errors.student_name}>
-                <FieldLabel htmlFor="student_name">Full Name</FieldLabel>
-                <Input id="student_name" {...register("student_name")} aria-invalid={!!errors.student_name} />
-                <FieldError errors={errors.student_name ? [{ message: errors.student_name.message }] : undefined} />
+              <Field data-invalid={!!errors.studentName}>
+                <FieldLabel htmlFor="studentName">Full Name</FieldLabel>
+                <Input id="studentName" {...register("studentName")} aria-invalid={!!errors.studentName} />
+                <FieldError errors={errors.studentName ? [{ message: errors.studentName.message }] : undefined} />
               </Field>
 
               <div className="grid grid-cols-2 gap-4">
@@ -151,32 +133,32 @@ export function StudentForm() {
                   )}
                 />
                 <Field>
-                  <FieldLabel htmlFor="date_of_birth">Date of Birth</FieldLabel>
-                  <Input id="date_of_birth" type="date" {...register("date_of_birth")} />
+                  <FieldLabel htmlFor="dateOfBirth">Date of Birth</FieldLabel>
+                  <Input id="dateOfBirth" type="date" {...register("dateOfBirth")} />
                 </Field>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <Controller
-                  name="department_id"
+                  name="departmentId"
                   control={control}
                   render={({ field }) => {
                     const deptItems = [
                       { label: "Select department", value: "" },
                       ...departments.map((d) => ({
-                        label: `${d.department_name} (${d.department_code})`,
-                        value: String(d.department_id),
+                        label: `${d.departmentName} (${d.departmentCode})`,
+                        value: String(d.departmentId),
                       })),
                     ];
                     return (
-                      <Field data-invalid={!!errors.department_id}>
-                        <FieldLabel htmlFor="department_id">Department</FieldLabel>
+                      <Field data-invalid={!!errors.departmentId}>
+                        <FieldLabel htmlFor="departmentId">Department</FieldLabel>
                         <Select
                           items={deptItems}
                           value={field.value}
                           onValueChange={(v) => field.onChange(v)}
                         >
-                          <SelectTrigger id="department_id">
+                          <SelectTrigger id="departmentId">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -190,22 +172,22 @@ export function StudentForm() {
                           </SelectContent>
                         </Select>
                         <FieldError
-                          errors={errors.department_id ? [{ message: errors.department_id.message }] : undefined}
+                          errors={errors.departmentId ? [{ message: errors.departmentId.message }] : undefined}
                         />
                       </Field>
                     );
                   }}
                 />
-                <Field data-invalid={!!errors.admission_year}>
-                  <FieldLabel htmlFor="admission_year">Admission Year</FieldLabel>
+                <Field data-invalid={!!errors.admissionYear}>
+                  <FieldLabel htmlFor="admissionYear">Admission Year</FieldLabel>
                   <Input
-                    id="admission_year"
+                    id="admissionYear"
                     type="number"
-                    {...register("admission_year")}
-                    aria-invalid={!!errors.admission_year}
+                    {...register("admissionYear")}
+                    aria-invalid={!!errors.admissionYear}
                   />
                   <FieldError
-                    errors={errors.admission_year ? [{ message: errors.admission_year.message }] : undefined}
+                    errors={errors.admissionYear ? [{ message: errors.admissionYear.message }] : undefined}
                   />
                 </Field>
               </div>
@@ -238,11 +220,11 @@ export function StudentForm() {
                 )}
               />
 
-              {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+              {isPending && <p className="text-sm text-muted-foreground">Creating student...</p>}
 
               <div className="flex gap-3 pt-2">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Creating..." : "Create Student"}
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Creating..." : "Create Student"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Cancel
