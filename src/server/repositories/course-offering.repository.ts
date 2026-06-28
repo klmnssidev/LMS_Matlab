@@ -7,7 +7,7 @@ export type OfferingFilters = {
   semesterId?: number;
 };
 
-export async function findMany(filters: OfferingFilters) {
+export async function findMany(filters: OfferingFilters = {}) {
   const where: Prisma.CourseOfferingWhereInput = {};
 
   if (filters.courseId) where.courseId = filters.courseId;
@@ -36,4 +36,26 @@ export async function findById(id: number) {
       classroom: true,
     },
   });
+}
+
+export async function create(data: Prisma.CourseOfferingCreateInput) {
+  return prisma.courseOffering.create({ data });
+}
+
+export async function update(id: number, data: Prisma.CourseOfferingUpdateInput) {
+  return prisma.courseOffering.update({ where: { offeringId: id }, data });
+}
+
+export async function remove(id: number) {
+  return prisma.courseOffering.delete({ where: { offeringId: id } });
+}
+
+export async function count(filters: OfferingFilters = {}) {
+  const where: Prisma.CourseOfferingWhereInput = {};
+
+  if (filters.courseId) where.courseId = filters.courseId;
+  if (filters.teacherId) where.teacherId = filters.teacherId;
+  if (filters.semesterId) where.semesterId = filters.semesterId;
+
+  return prisma.courseOffering.count({ where });
 }

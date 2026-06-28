@@ -15,6 +15,8 @@ import {
   ImageIcon,
   BookMarked,
   Trophy,
+  TableProperties,
+  FileSpreadsheet,
 } from "lucide-react";
 
 type Role = "Admin" | "Teacher" | "Student";
@@ -33,6 +35,8 @@ const allNavItems: NavItem[] = [
   { href: "/courses", label: "Courses", icon: BookOpen, roles: ["Admin", "Teacher", "Student"] },
   { href: "/enrollments", label: "Enrollments", icon: ClipboardList, roles: ["Admin", "Teacher"] },
   { href: "/attendance", label: "Attendance", icon: CalendarCheck, roles: ["Admin", "Teacher"] },
+  { href: "/course-offerings", label: "Course Offerings", icon: TableProperties, roles: ["Admin"] },
+  { href: "/exam-results", label: "Exam Results", icon: FileSpreadsheet, roles: ["Admin", "Teacher"] },
   { href: "/posters", label: "Posters", icon: ImageIcon, roles: ["Admin", "Teacher", "Student"] },
   { href: "/my-courses", label: "My Courses", icon: BookMarked, roles: ["Student"] },
   { href: "/my-grades", label: "My Grades", icon: Trophy, roles: ["Student"] },

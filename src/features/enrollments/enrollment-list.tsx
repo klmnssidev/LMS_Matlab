@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -61,6 +61,9 @@ export function EnrollmentList() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Enrollments</h1>
+        <Button render={<Link href="/enrollments/new" />}>
+          <Plus className="size-4" /> New Enrollment
+        </Button>
       </div>
 
       <div className="flex gap-3">

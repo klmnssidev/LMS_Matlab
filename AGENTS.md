@@ -39,11 +39,16 @@ Next.js 16.2.9 university management dashboard. Clerk auth + RBAC, PostgreSQL (p
 - Dashboard hooks stateless — re-fetch on mount via TanStack Query (no staleTime customization)
 - `@clerk/nextjs/server` module used for server-side `currentUser()` in stats controller
 
-## Still Needed (Management UIs)
-- Enrollment creation/edit form
-- Attendance creation/edit form (bulk entry)
-- Exam results management UI (admin/teacher)
-- Course offering management
+## Management UIs (All Done)
+- Course Offering management: list, create, edit, delete via `/course-offerings/*`
+- Enrollment creation form: `/enrollments/new`
+- Bulk Attendance entry: `/attendance/new` — select offering, mark all students present/absent/late/excused
+- Exam Results management: list + delete via `/exam-results`, create via `/exam-results/new`
+
+## Sidebar Navigation
+- Admin sidebar includes: Dashboard, Students, Teachers, Courses, Enrollments, Attendance, **Course Offerings**, **Exam Results**, Posters
+- Teacher sidebar: Dashboard, Students, Courses, Enrollments, Attendance, **Exam Results**, Posters
+- Student sidebar: Dashboard, Courses, Posters, My Courses, My Grades
 
 ## Critical Context
 - Prisma 7.8.0 with `@prisma/adapter-pg` — constructor uses `new PrismaClient({ adapter })`
