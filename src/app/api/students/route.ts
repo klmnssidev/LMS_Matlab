@@ -13,9 +13,15 @@ export async function GET(req: NextRequest) {
     }
     const department_id = searchParams.get("department_id");
     const status = searchParams.get("status");
+    const search = searchParams.get("search");
+    const limit = searchParams.get("limit");
+    const offset = searchParams.get("offset");
     const students = await listStudents({
       department_id: department_id ? Number(department_id) : undefined,
       status: status || undefined,
+      search: search || undefined,
+      limit: limit ? Number(limit) : undefined,
+      offset: offset ? Number(offset) : undefined,
     });
     return NextResponse.json(students);
   } catch (error) {

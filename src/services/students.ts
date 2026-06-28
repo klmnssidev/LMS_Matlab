@@ -20,27 +20,46 @@ export type Student = z.infer<typeof StudentSchema>;
 export type CreateStudent = z.infer<typeof CreateStudentSchema>;
 export type UpdateStudent = z.infer<typeof UpdateStudentSchema>;
 
+export const StudentWithDeptSchema = StudentSchema.extend({
+  department_name: z.string(),
+  department_code: z.string(),
+});
+
+export type StudentWithDept = z.infer<typeof StudentWithDeptSchema>;
+
 export async function listStudents(options?: {
   department_id?: number;
   status?: string;
+  search?: string;
   limit?: number;
   offset?: number;
-}): Promise<Student[]> {
+}): Promise<StudentWithDept[]> {
   const conditions: string[] = [];
   const params: unknown[] = [];
   let idx = 1;
 
   if (options?.department_id) {
-    conditions.push(`department_id = $${idx++}`);
+    conditions.push(`s.department_id = $${idx++}`);
     params.push(options.department_id);
   }
   if (options?.status) {
-    conditions.push(`status = $${idx++}`);
+    conditions.push(`s.status = $${idx++}`);
     params.push(options.status);
+  }
+  if (options?.search) {
+    conditions.push(`(s.student_name ILIKE $${idx} OR s.email ILIKE $${idx})`);
+    params.push(`%${options.search}%`);
+    idx++;
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  let sql = `SELECT * FROM students ${where} ORDER BY student_name`;
+  let sql = `
+    SELECT s.*, d.department_name, d.department_code
+    FROM students s
+    JOIN departments d ON d.department_id = s.department_id
+    ${where}
+    ORDER BY s.student_name
+  `;
   if (options?.limit) {
     sql += ` LIMIT $${idx++}`;
     params.push(options.limit);
@@ -51,12 +70,18 @@ export async function listStudents(options?: {
   }
 
   const { rows } = await db.query(sql, params);
-  return rows.map((r) => StudentSchema.parse(r));
+  return rows.map((r) => StudentWithDeptSchema.parse(r));
 }
 
-export async function getStudent(id: number): Promise<Student | null> {
-  const { rows } = await db.query("SELECT * FROM students WHERE student_id = $1", [id]);
-  return rows.length ? StudentSchema.parse(rows[0]) : null;
+export async function getStudent(id: number): Promise<StudentWithDept | null> {
+  const { rows } = await db.query(
+    `SELECT s.*, d.department_name, d.department_code
+     FROM students s
+     JOIN departments d ON d.department_id = s.department_id
+     WHERE s.student_id = $1`,
+    [id]
+  );
+  return rows.length ? StudentWithDeptSchema.parse(rows[0]) : null;
 }
 
 export async function createStudent(data: CreateStudent): Promise<Student> {
