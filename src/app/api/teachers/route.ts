@@ -12,8 +12,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(teacher);
     }
     const department_id = searchParams.get("department_id");
+    const search = searchParams.get("search");
+    const limit = searchParams.get("limit");
+    const offset = searchParams.get("offset");
     const teachers = await listTeachers({
       department_id: department_id ? Number(department_id) : undefined,
+      search: search || undefined,
+      limit: limit ? Number(limit) : undefined,
+      offset: offset ? Number(offset) : undefined,
     });
     return NextResponse.json(teachers);
   } catch (error) {

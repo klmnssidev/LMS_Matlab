@@ -18,29 +18,63 @@ export type Teacher = z.infer<typeof TeacherSchema>;
 export type CreateTeacher = z.infer<typeof CreateTeacherSchema>;
 export type UpdateTeacher = z.infer<typeof UpdateTeacherSchema>;
 
+export const TeacherWithDeptSchema = TeacherSchema.extend({
+  department_name: z.string(),
+  department_code: z.string(),
+});
+
+export type TeacherWithDept = z.infer<typeof TeacherWithDeptSchema>;
+
 export async function listTeachers(options?: {
   department_id?: number;
-}): Promise<Teacher[]> {
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<TeacherWithDept[]> {
   const conditions: string[] = [];
   const params: unknown[] = [];
   let idx = 1;
 
   if (options?.department_id) {
-    conditions.push(`department_id = $${idx++}`);
+    conditions.push(`t.department_id = $${idx++}`);
     params.push(options.department_id);
+  }
+  if (options?.search) {
+    conditions.push(`(t.teacher_name ILIKE $${idx} OR t.email ILIKE $${idx})`);
+    params.push(`%${options.search}%`);
+    idx++;
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  const { rows } = await db.query(
-    `SELECT * FROM teachers ${where} ORDER BY teacher_name`,
-    params
-  );
-  return rows.map((r) => TeacherSchema.parse(r));
+  let sql = `
+    SELECT t.*, d.department_name, d.department_code
+    FROM teachers t
+    JOIN departments d ON d.department_id = t.department_id
+    ${where}
+    ORDER BY t.teacher_name
+  `;
+  if (options?.limit) {
+    sql += ` LIMIT $${idx++}`;
+    params.push(options.limit);
+  }
+  if (options?.offset) {
+    sql += ` OFFSET $${idx++}`;
+    params.push(options.offset);
+  }
+
+  const { rows } = await db.query(sql, params);
+  return rows.map((r) => TeacherWithDeptSchema.parse(r));
 }
 
-export async function getTeacher(id: number): Promise<Teacher | null> {
-  const { rows } = await db.query("SELECT * FROM teachers WHERE teacher_id = $1", [id]);
-  return rows.length ? TeacherSchema.parse(rows[0]) : null;
+export async function getTeacher(id: number): Promise<TeacherWithDept | null> {
+  const { rows } = await db.query(
+    `SELECT t.*, d.department_name, d.department_code
+     FROM teachers t
+     JOIN departments d ON d.department_id = t.department_id
+     WHERE t.teacher_id = $1`,
+    [id]
+  );
+  return rows.length ? TeacherWithDeptSchema.parse(rows[0]) : null;
 }
 
 export async function createTeacher(data: CreateTeacher): Promise<Teacher> {
@@ -64,7 +98,7 @@ export async function updateTeacher(id: number, data: UpdateTeacher): Promise<Te
     }
   }
 
-  if (!fields.length) return getTeacher(id);
+  if (!fields.length) return null;
 
   params.push(id);
   const { rows } = await db.query(
