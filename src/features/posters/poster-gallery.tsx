@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { ImageIcon, Plus, Trash2, Upload } from "lucide-react";
+import { useState, useRef } from "react";
+import { ImageIcon, Plus, Trash2 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,65 +27,37 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonCardGrid } from "@/components/loading-skeletons";
-import type { Poster } from "./types";
+import { usePosters, useUploadPoster, useDeletePoster } from "@/features/posters/hooks/use-posters";
 
 export function PosterGallery() {
-  const [posters, setPosters] = useState<Poster[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: posters = [], isLoading, error } = usePosters();
+  const { mutateAsync: upload, isPending: uploading } = useUploadPoster();
+  const { mutateAsync: remove } = useDeletePoster();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const { user } = useUser();
   const role = (user?.publicMetadata?.role ?? "Student") as string;
   const isAdmin = role === "Admin";
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/posters")
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        if (!cancelled) setPosters(data);
-      })
-      .catch((e) => { if (!cancelled) setError(e.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
-
   async function handleUpload() {
     if (!title || !file) return;
-    setUploading(true);
     try {
-      const formData = new FormData();
-      formData.set("title", title);
-      formData.set("image", file);
-      const res = await fetch("/api/posters", {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Upload failed");
-      const poster = await res.json();
-      setPosters((prev) => [poster, ...prev]);
+      await upload({ title, file });
       setUploadOpen(false);
       setTitle("");
       setFile(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setUploading(false);
+    } catch {
+      // handled by mutation state
     }
   }
 
   async function handleDelete(id: number) {
     try {
-      const res = await fetch(`/api/posters?id=${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Delete failed");
-      setPosters((prev) => prev.filter((p) => p.poster_id !== id));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Delete failed");
+      await remove(id);
+    } catch {
+      // handled by mutation state
     }
   }
 
@@ -123,10 +95,10 @@ export function PosterGallery() {
         )}
       </div>
 
-      {loading && <SkeletonCardGrid count={6} />}
-      {error && <p className="text-destructive">{error}</p>}
+      {isLoading && <SkeletonCardGrid count={6} />}
+      {error && <p className="text-destructive">{error.message}</p>}
 
-      {!loading && !error && posters.length === 0 && (
+      {!isLoading && !error && posters.length === 0 && (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon"><ImageIcon /></EmptyMedia>
@@ -136,13 +108,13 @@ export function PosterGallery() {
         </Empty>
       )}
 
-      {!loading && !error && posters.length > 0 && (
+      {!isLoading && !error && posters.length > 0 && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {posters.map((poster) => (
-            <Card key={poster.poster_id} className="overflow-hidden group">
+            <Card key={poster.posterId} className="overflow-hidden group">
               <div className="aspect-[4/3] bg-muted relative">
                 <img
-                  src={`/api/posters?id=${poster.poster_id}`}
+                  src={`/api/posters?id=${poster.posterId}`}
                   alt={poster.title}
                   className="size-full object-cover"
                 />
@@ -151,7 +123,7 @@ export function PosterGallery() {
                     variant="destructive"
                     size="icon"
                     className="absolute top-2 right-2 size-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => handleDelete(poster.poster_id)}
+                    onClick={() => handleDelete(poster.posterId)}
                   >
                     <Trash2 className="size-4" />
                   </Button>
@@ -160,7 +132,7 @@ export function PosterGallery() {
               <CardHeader className="p-3 pt-2">
                 <CardTitle className="text-sm font-medium">{poster.title}</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  {poster.created_at ? new Date(poster.created_at).toLocaleDateString() : ""}
+                  {poster.createdAt ? new Date(poster.createdAt).toLocaleDateString() : ""}
                 </p>
               </CardHeader>
             </Card>

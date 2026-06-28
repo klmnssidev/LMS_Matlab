@@ -1,2 +1,2 @@
-export type { Poster, PosterFull, CreatePoster } from "@/services/posters";
-export { PosterSchema, PosterFullSchema, CreatePosterSchema } from "@/services/posters";
+export type { Poster, PosterFull, CreatePoster } from "@/server/schemas/poster.schema";
+export { PosterSchema, PosterFullSchema, CreatePosterSchema } from "@/server/schemas/poster.schema";
