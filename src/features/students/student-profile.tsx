@@ -1,8 +1,8 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, Calendar } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Calendar, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -22,7 +22,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonProfile } from "@/components/loading-skeletons";
-import { useStudent } from "@/features/students/hooks/use-students";
+import { useStudent, useDeleteStudent } from "@/features/students/hooks/use-students";
 
 type Enrollment = {
   enrollmentId: number;
@@ -42,11 +42,21 @@ function badgeVariant(status: string) {
 }
 
 export function StudentProfile({ id }: { id: number }) {
+  const router = useRouter();
   const { data: student, isLoading, error } = useStudent(id);
+  const { mutateAsync: deleteStudent, isPending: isDeleting } = useDeleteStudent();
   const params = useParams();
 
   if (isLoading) return <SkeletonProfile />;
   if (error || !student) return <p className="text-destructive">{error?.message || "Not found"}</p>;
+
+  async function handleDelete() {
+    if (confirm("Delete this student? This action cannot be undone.")) {
+      await deleteStudent(student!.studentId);
+      router.push("/students");
+      router.refresh();
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,6 +65,16 @@ export function StudentProfile({ id }: { id: number }) {
           <ArrowLeft />
         </Button>
         <h1 className="text-3xl font-bold tracking-tight">{student.studentName}</h1>
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" render={<Link href={`/students/${student.studentId}/edit`} />}>
+            <Pencil data-icon="inline-start" />
+            Edit
+          </Button>
+          <Button variant="destructive" size="sm" disabled={isDeleting} onClick={handleDelete}>
+            <Trash2 data-icon="inline-start" />
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">

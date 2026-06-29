@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
@@ -42,21 +42,17 @@ const allNavItems: NavItem[] = [
   { href: "/my-grades", label: "My Grades", icon: Trophy, roles: ["Student"] },
 ];
 
-function Hydrated({ children }: { children: React.ReactNode }) {
-  const hydrated = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
-  if (!hydrated) return null;
-  return children;
-}
-
 export function Sidebar() {
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { user } = useUser();
+
+  useEffect(() => { setMounted(true); }, []);
+
   const role = (user?.publicMetadata?.role as Role) ?? "Student";
-  const navItems = allNavItems.filter((item) => item.roles.includes(role));
+  const navItems = "useState" in globalThis || mounted
+    ? allNavItems.filter((item) => item.roles.includes(role))
+    : allNavItems.filter((item) => item.roles.includes("Student" as Role));
 
   return (
     <aside className="w-64 border-r bg-sidebar flex flex-col">
@@ -90,11 +86,9 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <Hydrated>
-        <div className="shrink-0 border-t border-sidebar-border p-3">
-          <span className="text-xs text-sidebar-foreground/50">Role: {role}</span>
-        </div>
-      </Hydrated>
+      <div className="shrink-0 border-t border-sidebar-border p-3">
+        <span className="text-xs text-sidebar-foreground/50">Role: {role}</span>
+      </div>
     </aside>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, Calendar } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Calendar, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -20,15 +21,25 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonProfile } from "@/components/loading-skeletons";
-import { useTeacher } from "@/features/teachers/hooks/use-teachers";
+import { useTeacher, useDeleteTeacher } from "@/features/teachers/hooks/use-teachers";
 
 export function TeacherProfile({ id }: { id: number }) {
+  const router = useRouter();
   const { data: teacher, isLoading, error } = useTeacher(id);
+  const { mutateAsync: deleteTeacher, isPending: isDeleting } = useDeleteTeacher();
 
   if (isLoading) return <SkeletonProfile />;
   if (error || !teacher) return <p className="text-destructive">{error?.message || "Not found"}</p>;
 
   const offerings = teacher.courseOfferings ?? [];
+
+  async function handleDelete() {
+    if (confirm("Delete this teacher? This action cannot be undone.")) {
+      await deleteTeacher(teacher!.teacherId);
+      router.push("/teachers");
+      router.refresh();
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -37,6 +48,16 @@ export function TeacherProfile({ id }: { id: number }) {
           <ArrowLeft />
         </Button>
         <h1 className="text-3xl font-bold tracking-tight">{teacher.teacherName}</h1>
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" render={<Link href={`/teachers/${teacher.teacherId}/edit`} />}>
+            <Pencil data-icon="inline-start" />
+            Edit
+          </Button>
+          <Button variant="destructive" size="sm" disabled={isDeleting} onClick={handleDelete}>
+            <Trash2 data-icon="inline-start" />
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">

@@ -21,7 +21,11 @@ import {
   FieldLabel,
   FieldError,
 } from "@/components/ui/field";
-import { useCreateStudent } from "@/features/students/hooks/use-students";
+import {
+  useCreateStudent,
+  useUpdateStudent,
+  useStudent,
+} from "@/features/students/hooks/use-students";
 import { useDepartments } from "@/shared/hooks/use-departments";
 
 const formSchema = z.object({
@@ -49,28 +53,71 @@ const statusItems = [
   { label: "Withdrawn", value: "Withdrawn" },
 ];
 
-export function StudentForm() {
+type Props = {
+  initial?: { student_id?: number };
+};
+
+export function StudentForm({ initial }: Props) {
   const router = useRouter();
   const { data: departments = [] } = useDepartments();
-  const { mutateAsync: createStudent, isPending } = useCreateStudent();
+  const { data: existing } = useStudent(initial?.student_id ?? null);
+  const { mutateAsync: createStudent, isPending: isCreating } = useCreateStudent();
+  const { mutateAsync: updateStudent, isPending: isUpdating } = useUpdateStudent();
+  const isEditing = !!initial?.student_id;
+  const isPending = isCreating || isUpdating;
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { status: "Active", gender: "Male", admissionYear: String(new Date().getFullYear()) },
+    defaultValues: {
+      studentName: "",
+      email: "",
+      phone: "",
+      gender: "Male",
+      dateOfBirth: "",
+      departmentId: "",
+      admissionYear: String(new Date().getFullYear()),
+      status: "Active",
+    },
+    values: existing
+      ? {
+          studentName: existing.studentName,
+          email: existing.email,
+          phone: existing.phone ?? "",
+          gender: existing.gender,
+          dateOfBirth: existing.dateOfBirth ?? "",
+          departmentId: String(existing.departmentId),
+          admissionYear: String(existing.admissionYear),
+          status: existing.status,
+        }
+      : undefined,
   });
 
   async function onSubmit(data: FormValues) {
     try {
-      await createStudent({
-        studentName: data.studentName,
-        email: data.email,
-        phone: data.phone || null,
-        gender: data.gender,
-        dateOfBirth: data.dateOfBirth || null,
-        departmentId: Number(data.departmentId),
-        admissionYear: Number(data.admissionYear),
-        status: data.status,
-      });
+      if (isEditing) {
+        await updateStudent({
+          student_id: initial!.student_id!,
+          studentName: data.studentName,
+          email: data.email,
+          phone: data.phone || null,
+          gender: data.gender,
+          dateOfBirth: data.dateOfBirth || null,
+          departmentId: Number(data.departmentId),
+          admissionYear: Number(data.admissionYear),
+          status: data.status,
+        });
+      } else {
+        await createStudent({
+          studentName: data.studentName,
+          email: data.email,
+          phone: data.phone || null,
+          gender: data.gender,
+          dateOfBirth: data.dateOfBirth || null,
+          departmentId: Number(data.departmentId),
+          admissionYear: Number(data.admissionYear),
+          status: data.status,
+        });
+      }
       router.push("/students");
       router.refresh();
     } catch {
@@ -80,7 +127,9 @@ export function StudentForm() {
 
   return (
     <div className="max-w-xl flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Add Student</h1>
+      <h1 className="text-3xl font-bold tracking-tight">
+        {isEditing ? "Edit Student" : "Add Student"}
+      </h1>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <Card>
@@ -220,11 +269,11 @@ export function StudentForm() {
                 )}
               />
 
-              {isPending && <p className="text-sm text-muted-foreground">Creating student...</p>}
+              {isPending && <p className="text-sm text-muted-foreground">{isEditing ? "Updating student..." : "Creating student..."}</p>}
 
               <div className="flex gap-3 pt-2">
                 <Button type="submit" disabled={isPending}>
-                  {isPending ? "Creating..." : "Create Student"}
+                  {isPending ? (isEditing ? "Updating..." : "Creating...") : isEditing ? "Update Student" : "Create Student"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Cancel

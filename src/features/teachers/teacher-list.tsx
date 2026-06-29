@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -54,7 +54,13 @@ export function TeacherList() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
+        <Button render={<Link href="/teachers/new" />}>
+          <Plus data-icon="inline-start" />
+          Add Teacher
+        </Button>
+      </div>
 
       <div className="flex gap-3">
         <div className="relative flex-1 max-w-sm">
