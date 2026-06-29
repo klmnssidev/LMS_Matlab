@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import * as enrollmentService from "@/server/services/enrollment.service";
+import * as accountLinkingService from "@/server/services/account-linking.service";
 import { CreateEnrollmentSchema, UpdateEnrollmentSchema } from "@/server/schemas/enrollment.schema";
 import { requireRole } from "@/server/permissions/student.ability";
 
@@ -7,8 +9,22 @@ export async function list(req: NextRequest) {
   try {
     await requireRole("Admin", "Teacher", "Student");
     const { searchParams } = new URL(req.url);
+
+    let studentId: number | undefined;
+    if (searchParams.get("self") === "true") {
+      const session = await auth();
+      if (session.userId) {
+        const linked = await accountLinkingService.getLinkedUser(session.userId);
+        if (linked?.type === "student") {
+          studentId = linked.record.studentId;
+        }
+      }
+    } else {
+      studentId = searchParams.get("student_id") ? Number(searchParams.get("student_id")) : undefined;
+    }
+
     const filters = {
-      studentId: searchParams.get("student_id") ? Number(searchParams.get("student_id")) : undefined,
+      studentId,
       offeringId: searchParams.get("offering_id") ? Number(searchParams.get("offering_id")) : undefined,
       status: searchParams.get("status") || undefined,
     };

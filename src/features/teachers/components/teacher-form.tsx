@@ -31,6 +31,7 @@ const formSchema = z.object({
   departmentId: z.string().min(1, "Department is required"),
   academicRank: z.string().min(1, "Rank is required"),
   hireDate: z.string().min(1, "Hire date is required"),
+  employeeNumber: z.string().max(30).optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -66,6 +67,7 @@ export function TeacherForm({ initial }: Props) {
       departmentId: existing ? String(existing.departmentId) : "",
       academicRank: existing?.academicRank ?? "",
       hireDate: existing?.hireDate ?? "",
+      employeeNumber: existing?.employeeNumber ?? "",
     },
     values: existing
       ? {
@@ -75,6 +77,7 @@ export function TeacherForm({ initial }: Props) {
           departmentId: String(existing.departmentId),
           academicRank: existing.academicRank,
           hireDate: existing.hireDate,
+          employeeNumber: existing.employeeNumber ?? "",
         }
       : undefined,
   });
@@ -90,6 +93,7 @@ export function TeacherForm({ initial }: Props) {
           departmentId: Number(data.departmentId),
           academicRank: data.academicRank,
           hireDate: data.hireDate,
+          employeeNumber: data.employeeNumber || null,
         });
       } else {
         await createTeacher({
@@ -99,6 +103,7 @@ export function TeacherForm({ initial }: Props) {
           departmentId: Number(data.departmentId),
           academicRank: data.academicRank,
           hireDate: data.hireDate,
+          employeeNumber: data.employeeNumber || null,
         });
       }
       router.push("/teachers");
@@ -212,6 +217,15 @@ export function TeacherForm({ initial }: Props) {
                 <FieldLabel htmlFor="hireDate">Hire Date</FieldLabel>
                 <Input id="hireDate" type="date" {...register("hireDate")} aria-invalid={!!errors.hireDate} />
                 <FieldError errors={errors.hireDate ? [{ message: errors.hireDate.message }] : undefined} />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="employeeNumber">Employee Number</FieldLabel>
+                <Input
+                  id="employeeNumber"
+                  placeholder="e.g. TCH-0042"
+                  {...register("employeeNumber")}
+                />
               </Field>
 
               {isPending && <p className="text-sm text-muted-foreground">{isEditing ? "Updating teacher..." : "Creating teacher..."}</p>}

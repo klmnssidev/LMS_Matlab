@@ -41,6 +41,27 @@ export async function findById(id: number) {
   });
 }
 
+export async function findByClerkId(clerkUserId: string) {
+  return prisma.student.findUnique({
+    where: { clerkUserId },
+    include: { department: true },
+  });
+}
+
+export async function findByStudentNumber(studentNumber: string) {
+  return prisma.student.findUnique({
+    where: { studentNumber },
+    include: { department: true },
+  });
+}
+
+export async function linkToClerk(studentId: number, clerkUserId: string) {
+  return prisma.student.update({
+    where: { studentId },
+    data: { clerkUserId },
+  });
+}
+
 export async function create(data: Prisma.StudentCreateInput) {
   return prisma.student.create({ data });
 }

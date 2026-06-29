@@ -20,12 +20,9 @@ import {
 } from "@/components/ui/empty";
 import { SkeletonTable } from "@/components/loading-skeletons";
 import { useExamResults } from "@/features/enrollments/hooks/use-exam-results";
-import { useUser } from "@clerk/nextjs";
 
 export function MyGrades() {
-  const { user } = useUser();
-  const dbId = (user?.publicMetadata?.db_id ?? 0) as number;
-  const { data: results = [], isLoading, error } = useExamResults({ student_id: dbId });
+  const { data: results = [], isLoading, error } = useExamResults({ self: true });
 
   if (isLoading) {
     return (

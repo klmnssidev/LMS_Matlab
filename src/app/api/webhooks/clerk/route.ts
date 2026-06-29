@@ -44,21 +44,30 @@ export async function POST(req: Request) {
       prisma.teacher.findFirst({ where: { email }, select: { teacherId: true } }),
     ]);
 
-    let role = "Student";
-    let dbId: number | null = null;
+    let role = "Unlinked";
 
     if (student) {
-      role = "Student";
-      dbId = student.studentId;
+      const linkedStudent = await prisma.student.findUnique({
+        where: { studentId: student.studentId },
+        select: { clerkUserId: true },
+      });
+      if (linkedStudent?.clerkUserId) {
+        role = "Student";
+      }
     } else if (teacher) {
-      role = "Teacher";
-      dbId = teacher.teacherId;
+      const linkedTeacher = await prisma.teacher.findUnique({
+        where: { teacherId: teacher.teacherId },
+        select: { clerkUserId: true },
+      });
+      if (linkedTeacher?.clerkUserId) {
+        role = "Teacher";
+      }
     }
 
     const { clerkClient } = await import("@clerk/nextjs/server");
     const client = await clerkClient();
     await client.users.updateUser(userId, {
-      publicMetadata: { role, db_id: dbId },
+      publicMetadata: { role },
     });
   }
 

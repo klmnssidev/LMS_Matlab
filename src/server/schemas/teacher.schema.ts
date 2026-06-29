@@ -8,6 +8,8 @@ export const TeacherSchema = z.object({
   phone: z.string().max(30).nullable(),
   academicRank: z.string().max(50),
   hireDate: z.string(),
+  clerkUserId: z.string().nullable().optional(),
+  employeeNumber: z.string().nullable().optional(),
 });
 
 export const CreateTeacherSchema = z.object({
@@ -17,6 +19,7 @@ export const CreateTeacherSchema = z.object({
   phone: z.string().max(30).nullable().optional(),
   academicRank: z.string().min(1, "Rank is required").max(50),
   hireDate: z.string().min(1, "Hire date is required"),
+  employeeNumber: z.string().max(30).nullable().optional(),
 });
 
 export const UpdateTeacherSchema = CreateTeacherSchema.partial();

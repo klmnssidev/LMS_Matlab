@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import * as examResultService from "@/server/services/exam-result.service";
+import * as accountLinkingService from "@/server/services/account-linking.service";
 import { CreateExamResultSchema, UpdateExamResultSchema } from "@/server/schemas/exam-result.schema";
 import { requireRole } from "@/server/permissions/student.ability";
 
@@ -7,10 +9,24 @@ export async function list(req: NextRequest) {
   try {
     await requireRole("Admin", "Teacher", "Student");
     const { searchParams } = new URL(req.url);
+
+    let studentId: number | undefined;
+    if (searchParams.get("self") === "true") {
+      const session = await auth();
+      if (session.userId) {
+        const linked = await accountLinkingService.getLinkedUser(session.userId);
+        if (linked?.type === "student") {
+          studentId = linked.record.studentId;
+        }
+      }
+    } else {
+      studentId = searchParams.get("student_id") ? Number(searchParams.get("student_id")) : undefined;
+    }
+
     const filters = {
       examId: searchParams.get("exam_id") ? Number(searchParams.get("exam_id")) : undefined,
       enrollmentId: searchParams.get("enrollment_id") ? Number(searchParams.get("enrollment_id")) : undefined,
-      studentId: searchParams.get("student_id") ? Number(searchParams.get("student_id")) : undefined,
+      studentId,
     };
     const [results, total] = await Promise.all([
       examResultService.list(filters),

@@ -1,17 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { AdminDashboard } from "@/features/dashboard/admin-dashboard";
 import { TeacherDashboard } from "@/features/dashboard/teacher-dashboard";
 import { StudentDashboard } from "@/features/dashboard/student-dashboard";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user, isLoaded } = useUser();
   const [mounted, setMounted] = useState(false);
-  const role = (user?.publicMetadata?.role as string) ?? "Student";
+  const role = (user?.publicMetadata?.role as string) ?? "";
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (mounted && isLoaded && (role === "" || role === "Unlinked")) {
+      router.replace("/complete-profile");
+    }
+  }, [mounted, isLoaded, role, router]);
 
   if (!mounted || !isLoaded) {
     return (
@@ -20,6 +28,10 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Loading...</p>
       </div>
     );
+  }
+
+  if (role === "" || role === "Unlinked") {
+    return null;
   }
 
   switch (role) {

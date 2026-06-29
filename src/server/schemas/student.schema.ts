@@ -10,6 +10,8 @@ export const StudentSchema = z.object({
   dateOfBirth: z.string().nullable(),
   admissionYear: z.number(),
   status: z.enum(["Active", "Graduated", "Suspended", "Withdrawn"]).default("Active"),
+  clerkUserId: z.string().nullable().optional(),
+  studentNumber: z.string().nullable().optional(),
 });
 
 export const CreateStudentSchema = z.object({
@@ -21,6 +23,7 @@ export const CreateStudentSchema = z.object({
   dateOfBirth: z.string().nullable().optional(),
   admissionYear: z.number(),
   status: z.enum(["Active", "Graduated", "Suspended", "Withdrawn"]).default("Active"),
+  studentNumber: z.string().max(30).nullable().optional(),
 });
 
 export const UpdateStudentSchema = CreateStudentSchema.partial();

@@ -30,6 +30,8 @@ model Student {
   dateOfBirth   DateTime?    @map("date_of_birth") @db.Date
   admissionYear Int          @map("admission_year")
   status        String?      @default("Active") @map("status") @db.VarChar(20)
+  clerkUserId   String?      @unique @map("clerk_user_id")
+  studentNumber String?      @unique @map("student_number")
 
   department  Department    @relation(fields: [departmentId], references: [departmentId])
   enrollments Enrollment[]
@@ -38,13 +40,15 @@ model Student {
 }
 
 model Teacher {
-  teacherId    Int          @id @default(autoincrement()) @map("teacher_id")
-  departmentId Int          @map("department_id")
-  teacherName  String       @map("teacher_name") @db.VarChar(120)
-  email        String       @unique @map("email") @db.VarChar(120)
-  phone        String?      @map("phone") @db.VarChar(30)
-  academicRank String       @map("academic_rank") @db.VarChar(50)
-  hireDate     DateTime     @map("hire_date") @db.Date
+  teacherId      Int          @id @default(autoincrement()) @map("teacher_id")
+  departmentId   Int          @map("department_id")
+  teacherName    String       @map("teacher_name") @db.VarChar(120)
+  email          String       @unique @map("email") @db.VarChar(120)
+  phone          String?      @map("phone") @db.VarChar(30)
+  academicRank   String       @map("academic_rank") @db.VarChar(50)
+  hireDate       DateTime     @map("hire_date") @db.Date
+  clerkUserId    String?      @unique @map("clerk_user_id")
+  employeeNumber String?      @unique @map("employee_number")
 
   department       Department       @relation(fields: [departmentId], references: [departmentId])
   courseOfferings  CourseOffering[]

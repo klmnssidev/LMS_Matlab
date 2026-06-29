@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import * as statsService from "@/server/services/stats.service";
 import * as offeringService from "@/server/services/course-offering.service";
+import * as accountLinkingService from "@/server/services/account-linking.service";
 import { requireRole } from "@/server/permissions/student.ability";
 
 export async function getAdminDashboard() {
@@ -17,21 +19,20 @@ export async function getAdminDashboard() {
 
 export async function getMyStats() {
   try {
-    const { currentUser } = await import("@clerk/nextjs/server");
-    const user = await currentUser();
-    if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-
-    const role = user.publicMetadata.role as string;
-    const dbId = user.publicMetadata.db_id as number;
-
-    if (!role || !dbId) {
+    const session = await auth();
+    if (!session.userId) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    if (role === "Teacher") {
+    const linked = await accountLinkingService.getLinkedUser(session.userId);
+    if (!linked) {
+      return NextResponse.json({ error: "ACCOUNT_NOT_LINKED" }, { status: 401 });
+    }
+
+    if (linked.type === "teacher") {
       const [stats, offerings] = await Promise.all([
-        statsService.getTeacherStats(dbId),
-        offeringService.listByTeacher(dbId),
+        statsService.getTeacherStats(linked.record.teacherId),
+        offeringService.listByTeacher(linked.record.teacherId),
       ]);
       return NextResponse.json({
         ...stats,
@@ -47,8 +48,8 @@ export async function getMyStats() {
       });
     }
 
-    if (role === "Student") {
-      const stats = await statsService.getStudentStats(dbId);
+    if (linked.type === "student") {
+      const stats = await statsService.getStudentStats(linked.record.studentId);
       return NextResponse.json(stats);
     }
 

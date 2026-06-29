@@ -37,6 +37,7 @@ const formSchema = z.object({
   departmentId: z.string().min(1, "Department is required"),
   admissionYear: z.string().min(1, "Admission year is required"),
   status: z.enum(["Active", "Graduated", "Suspended", "Withdrawn"]),
+  studentNumber: z.string().max(30).optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -77,6 +78,7 @@ export function StudentForm({ initial }: Props) {
       departmentId: "",
       admissionYear: String(new Date().getFullYear()),
       status: "Active",
+      studentNumber: "",
     },
     values: existing
       ? {
@@ -88,6 +90,7 @@ export function StudentForm({ initial }: Props) {
           departmentId: String(existing.departmentId),
           admissionYear: String(existing.admissionYear),
           status: existing.status,
+          studentNumber: existing.studentNumber ?? "",
         }
       : undefined,
   });
@@ -105,6 +108,7 @@ export function StudentForm({ initial }: Props) {
           departmentId: Number(data.departmentId),
           admissionYear: Number(data.admissionYear),
           status: data.status,
+          studentNumber: data.studentNumber || null,
         });
       } else {
         await createStudent({
@@ -116,6 +120,7 @@ export function StudentForm({ initial }: Props) {
           departmentId: Number(data.departmentId),
           admissionYear: Number(data.admissionYear),
           status: data.status,
+          studentNumber: data.studentNumber || null,
         });
       }
       router.push("/students");
@@ -240,6 +245,15 @@ export function StudentForm({ initial }: Props) {
                   />
                 </Field>
               </div>
+
+              <Field>
+                <FieldLabel htmlFor="studentNumber">Student Number</FieldLabel>
+                <Input
+                  id="studentNumber"
+                  placeholder="e.g. 20240015"
+                  {...register("studentNumber")}
+                />
+              </Field>
 
               <Controller
                 name="status"
