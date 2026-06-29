@@ -1,6 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { BookOpen, Trophy, CalendarCheck, GraduationCap } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SkeletonStatCards } from "@/components/loading-skeletons";
-import { useMyStats } from "@/features/dashboard/hooks";
+import { useMyStats, useMe } from "@/features/dashboard/hooks";
 
 function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number | string }) {
   return (
@@ -39,13 +38,14 @@ function attendanceBadge(status: string) {
 }
 
 export function StudentDashboard() {
-  const { user } = useUser();
+  const { data: profile } = useMe();
   const { data: stats, isLoading, error } = useMyStats();
+  const displayName = (profile as { studentName?: string } | undefined)?.studentName || "Student";
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Student"}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome, {displayName}</h1>
         <SkeletonStatCards count={4} />
       </div>
     );
@@ -54,7 +54,7 @@ export function StudentDashboard() {
   if (error || !stats) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Student"}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome, {displayName}</h1>
         <p className="text-destructive">{error?.message ?? "Failed to load"}</p>
       </div>
     );
@@ -68,7 +68,7 @@ export function StudentDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Student"}</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Welcome, {displayName}</h1>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={BookOpen} label="Enrolled" value={enrollments.active} />

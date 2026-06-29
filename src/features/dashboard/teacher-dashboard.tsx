@@ -1,6 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { BookOpen, Users, CalendarCheck } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -12,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SkeletonStatCards } from "@/components/loading-skeletons";
-import { useMyStats } from "@/features/dashboard/hooks";
+import { useMyStats, useMe } from "@/features/dashboard/hooks";
 
 type Offering = {
   offering_id: number;
@@ -39,13 +38,14 @@ function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label
 }
 
 export function TeacherDashboard() {
-  const { user } = useUser();
+  const { data: profile } = useMe();
   const { data: stats, isLoading, error } = useMyStats();
+  const displayName = (profile as { teacherName?: string } | undefined)?.teacherName || "Teacher";
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Teacher"}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome, {displayName}</h1>
         <SkeletonStatCards count={3} />
       </div>
     );
@@ -54,7 +54,7 @@ export function TeacherDashboard() {
   if (error || !stats) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Teacher"}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome, {displayName}</h1>
         <p className="text-destructive">{error?.message ?? "Failed to load"}</p>
       </div>
     );
@@ -64,7 +64,7 @@ export function TeacherDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName || "Teacher"}</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Welcome, {displayName}</h1>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         <StatCard icon={BookOpen} label="My Courses" value={totalOfferings} />

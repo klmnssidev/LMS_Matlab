@@ -14,6 +14,12 @@ async function fetchMyStats() {
   return res.json();
 }
 
+async function fetchMe() {
+  const res = await fetch("/api/me");
+  if (!res.ok) throw new Error("Failed to fetch profile");
+  return res.json();
+}
+
 export function useAdminStats() {
   return useQuery({
     queryKey: ["admin-stats"],
@@ -25,5 +31,12 @@ export function useMyStats() {
   return useQuery({
     queryKey: ["my-stats"],
     queryFn: fetchMyStats,
+  });
+}
+
+export function useMe() {
+  return useQuery({
+    queryKey: ["me"],
+    queryFn: fetchMe,
   });
 }
