@@ -2,7 +2,6 @@ import * as studentRepo from "@/server/repositories/student.repository";
 import type { StudentFilters } from "@/server/repositories/student.repository";
 import type { CreateStudent, UpdateStudent, StudentWithDept } from "@/server/schemas/student.schema";
 import type { AuthorizationScope } from "@/permissions";
-
 function toStudentWithDept(row: Awaited<ReturnType<typeof studentRepo.findMany>>[number]): StudentWithDept {
   return {
     studentId: row.studentId,
