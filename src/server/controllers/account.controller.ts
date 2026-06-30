@@ -35,28 +35,24 @@ export async function link(req: NextRequest) {
       );
     }
 
-    const { clerkClient } = await import("@clerk/nextjs/server");
-    const client = await clerkClient();
-    const role = linkedUser.type === "student" ? "Student" : "Teacher";
-    await client.users.updateUser(session.userId, {
-      publicMetadata: { role },
-    });
-
-    const record = linkedUser.record as { studentId?: number; teacherId?: number };
     return NextResponse.json({
       success: true,
-      type: linkedUser.type,
-      id: linkedUser.type === "student" ? record.studentId : record.teacherId,
+      type: linkedUser.role.toLowerCase(),
+      id: linkedUser.studentId ?? linkedUser.teacherId,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Validation failed", details: error.issues }, { status: 400 });
     }
 
-    if (error instanceof accountLinkingService.AccountNotLinkedError ||
-        error instanceof accountLinkingService.InvalidStudentNumberError ||
-        error instanceof accountLinkingService.InvalidEmployeeNumberError ||
-        error instanceof accountLinkingService.AccountAlreadyLinkedError) {
+    if (
+      error instanceof accountLinkingService.AccountNotLinkedError ||
+      error instanceof accountLinkingService.InvalidStudentNumberError ||
+      error instanceof accountLinkingService.InvalidEmployeeNumberError ||
+      error instanceof accountLinkingService.AccountAlreadyLinkedError ||
+      error instanceof accountLinkingService.StudentAlreadyLinkedError ||
+      error instanceof accountLinkingService.TeacherAlreadyLinkedError
+    ) {
       return NextResponse.json({ error: error.code }, { status: error.status });
     }
 
@@ -77,13 +73,7 @@ export async function me() {
       return NextResponse.json({ error: "ACCOUNT_NOT_LINKED" }, { status: 401 });
     }
 
-    if (linked.type === "student") {
-      const { clerkUserId: _, ...profile } = linked.record;
-      return NextResponse.json({ type: "student", ...profile });
-    }
-
-    const { clerkUserId: __, ...profile } = linked.record;
-    return NextResponse.json({ type: "teacher", ...profile });
+    return NextResponse.json(linked);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json({ error: message }, { status: 500 });

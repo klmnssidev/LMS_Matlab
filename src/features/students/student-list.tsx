@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/empty";
 import { SkeletonTable } from "@/components/loading-skeletons";
 import { useStudents } from "@/features/students/hooks/use-students";
+import { Can } from "@/permissions/components/can";
 
 const statusItems = [
   { label: "All Status", value: "" },
@@ -69,10 +70,12 @@ export function StudentList() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Students</h1>
-        <Button render={<Link href="/students/new" />}>
-          <Plus data-icon="inline-start" />
-          Add Student
-        </Button>
+        <Can I="create" a="Student">
+          <Button render={<Link href="/students/new" />}>
+            <Plus data-icon="inline-start" />
+            Add Student
+          </Button>
+        </Can>
       </div>
 
       <div className="flex gap-3">

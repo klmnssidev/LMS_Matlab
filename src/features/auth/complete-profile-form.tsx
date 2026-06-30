@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,6 @@ const typeItems = [
 ];
 
 export function CompleteProfileForm() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
@@ -76,8 +74,7 @@ export function CompleteProfileForm() {
         return;
       }
 
-      router.refresh();
-      router.push("/");
+      window.location.href = "/";
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -88,9 +85,9 @@ export function CompleteProfileForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Complete Your Profile</CardTitle>
+        <CardTitle>University Account Registration</CardTitle>
         <CardDescription>
-          Enter your student or employee number to link your account.
+          Please enter your university credentials to complete registration.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -101,7 +98,7 @@ export function CompleteProfileForm() {
               control={control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel htmlFor="type">I am a</FieldLabel>
+                  <FieldLabel htmlFor="type">Account Type</FieldLabel>
                   <Select
                     items={typeItems}
                     value={field.value}
@@ -125,31 +122,31 @@ export function CompleteProfileForm() {
             />
 
             {userType === "student" && (
-              <Field data-invalid={!!(errors as any).studentNumber}>
+              <Field data-invalid={!!(errors as FieldErrors<Extract<FormValues, { type: "student" }>>).studentNumber}>
                 <FieldLabel htmlFor="studentNumber">Student Number</FieldLabel>
                 <Input
                   id="studentNumber"
                   placeholder="e.g. 20240015"
                   {...register("studentNumber")}
-                  aria-invalid={!!(errors as any).studentNumber}
+                  aria-invalid={!!(errors as FieldErrors<Extract<FormValues, { type: "student" }>>).studentNumber}
                 />
                 <FieldError
-                  errors={(errors as any).studentNumber ? [{ message: (errors as any).studentNumber.message }] : undefined}
+                  errors={(errors as FieldErrors<Extract<FormValues, { type: "student" }>>).studentNumber ? [{ message: (errors as FieldErrors<Extract<FormValues, { type: "student" }>>).studentNumber!.message }] : undefined}
                 />
               </Field>
             )}
 
             {userType === "teacher" && (
-              <Field data-invalid={!!(errors as any).employeeNumber}>
+              <Field data-invalid={!!(errors as FieldErrors<Extract<FormValues, { type: "teacher" }>>).employeeNumber}>
                 <FieldLabel htmlFor="employeeNumber">Employee Number</FieldLabel>
                 <Input
                   id="employeeNumber"
                   placeholder="e.g. EMP0015"
                   {...register("employeeNumber")}
-                  aria-invalid={!!(errors as any).employeeNumber}
+                  aria-invalid={!!(errors as FieldErrors<Extract<FormValues, { type: "teacher" }>>).employeeNumber}
                 />
                 <FieldError
-                  errors={(errors as any).employeeNumber ? [{ message: (errors as any).employeeNumber.message }] : undefined}
+                  errors={(errors as FieldErrors<Extract<FormValues, { type: "teacher" }>>).employeeNumber ? [{ message: (errors as FieldErrors<Extract<FormValues, { type: "teacher" }>>).employeeNumber!.message }] : undefined}
                 />
               </Field>
             )}
@@ -157,7 +154,7 @@ export function CompleteProfileForm() {
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button type="submit" disabled={isPending} className="w-full">
-              {isPending ? "Linking..." : "Link Account"}
+              {isPending ? "Registering..." : "Register Account"}
             </Button>
           </FieldGroup>
         </form>

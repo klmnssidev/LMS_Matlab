@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { ImageIcon, Plus, Trash2 } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +26,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonCardGrid } from "@/components/loading-skeletons";
+import { Can } from "@/permissions/components/can";
 import { usePosters, useUploadPoster, useDeletePoster } from "@/features/posters/hooks/use-posters";
 
 export function PosterGallery() {
@@ -36,9 +36,6 @@ export function PosterGallery() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const { user } = useUser();
-  const role = (user?.publicMetadata?.role ?? "Student") as string;
-  const isAdmin = role === "Admin";
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleUpload() {
@@ -65,7 +62,7 @@ export function PosterGallery() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Posters</h1>
-        {isAdmin && (
+        <Can I="create" a="Poster">
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
             <DialogTrigger render={<Button><Plus data-icon="inline-start" />Upload Poster</Button>} />
             <DialogContent>
@@ -92,7 +89,7 @@ export function PosterGallery() {
               </div>
             </DialogContent>
           </Dialog>
-        )}
+        </Can>
       </div>
 
       {isLoading && <SkeletonCardGrid count={6} />}
@@ -103,7 +100,7 @@ export function PosterGallery() {
           <EmptyHeader>
             <EmptyMedia variant="icon"><ImageIcon /></EmptyMedia>
             <EmptyTitle>No posters yet</EmptyTitle>
-            <EmptyDescription>{isAdmin ? "Upload the first poster to get started." : "Check back later for new posters."}</EmptyDescription>
+            <EmptyDescription>No posters available yet.</EmptyDescription>
           </EmptyHeader>
         </Empty>
       )}
@@ -118,7 +115,7 @@ export function PosterGallery() {
                   alt={poster.title}
                   className="size-full object-cover"
                 />
-                {isAdmin && (
+                <Can I="delete" a="Poster">
                   <Button
                     variant="destructive"
                     size="icon"
@@ -127,7 +124,7 @@ export function PosterGallery() {
                   >
                     <Trash2 className="size-4" />
                   </Button>
-                )}
+                </Can>
               </div>
               <CardHeader className="p-3 pt-2">
                 <CardTitle className="text-sm font-medium">{poster.title}</CardTitle>

@@ -10,7 +10,6 @@ export const StudentSchema = z.object({
   dateOfBirth: z.string().nullable(),
   admissionYear: z.number(),
   status: z.enum(["Active", "Graduated", "Suspended", "Withdrawn"]).default("Active"),
-  clerkUserId: z.string().nullable().optional(),
   studentNumber: z.string().nullable().optional(),
 });
 

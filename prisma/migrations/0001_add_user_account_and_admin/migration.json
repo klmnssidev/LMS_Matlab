@@ -1,0 +1,12 @@
+{
+  "version": "7.1",
+  "steps": [
+    {
+      "tag": "CreateMigration",
+      "tag": "CreateEnum",
+      "tag": "CreateTable",
+      "tag": "CreateIndex",
+      "tag": "CreateMigration"
+    }
+  ]
+}

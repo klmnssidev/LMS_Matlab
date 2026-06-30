@@ -1,21 +1,17 @@
 import * as offeringRepo from "@/server/repositories/course-offering.repository";
 import type { OfferingFilters } from "@/server/repositories/course-offering.repository";
 import type { CourseOfferingJoined, CourseOffering as CourseOfferingFlat } from "@/server/schemas/course-offering.schema";
+import type { AuthorizationScope } from "@/permissions";
 
-export async function list(filters: OfferingFilters = {}) {
-  const rows = await offeringRepo.findMany(filters);
+export async function list(filters: OfferingFilters = {}, scope?: AuthorizationScope) {
+  const rows = await offeringRepo.findMany(filters, scope);
   return rows.map(toJoined);
 }
 
-export async function getById(id: number) {
-  const row = await offeringRepo.findById(id);
+export async function getById(id: number, scope?: AuthorizationScope) {
+  const row = await offeringRepo.findById(id, scope);
   if (!row) return null;
   return toJoined(row);
-}
-
-export async function listByTeacher(teacherId: number) {
-  const rows = await offeringRepo.findMany({ teacherId });
-  return rows.map(toJoined);
 }
 
 export async function create(data: { courseId: number; teacherId: number; semesterId: number; classroomId: number; sectionName?: string; maxStudents?: number }): Promise<CourseOfferingFlat> {
@@ -38,7 +34,10 @@ export async function create(data: { courseId: number; teacherId: number; semest
   };
 }
 
-export async function update(id: number, data: Partial<{ courseId: number; teacherId: number; semesterId: number; classroomId: number; sectionName: string; maxStudents: number }>): Promise<CourseOfferingFlat> {
+export async function update(id: number, data: Partial<{ courseId: number; teacherId: number; semesterId: number; classroomId: number; sectionName: string; maxStudents: number }>, scope?: AuthorizationScope): Promise<CourseOfferingFlat | null> {
+  const existing = await offeringRepo.findById(id, scope);
+  if (!existing) return null;
+
   const updateData: Record<string, unknown> = {};
   if (data.sectionName !== undefined) updateData.sectionName = data.sectionName;
   if (data.maxStudents !== undefined) updateData.maxStudents = data.maxStudents;
@@ -59,12 +58,14 @@ export async function update(id: number, data: Partial<{ courseId: number; teach
   };
 }
 
-export async function remove(id: number) {
+export async function remove(id: number, scope?: AuthorizationScope) {
+  const existing = await offeringRepo.findById(id, scope);
+  if (!existing) return null;
   return offeringRepo.remove(id);
 }
 
-export async function count(filters: OfferingFilters = {}) {
-  return offeringRepo.count(filters);
+export async function count(filters: OfferingFilters = {}, scope?: AuthorizationScope) {
+  return offeringRepo.count(filters, scope);
 }
 
 function toJoined(row: Awaited<ReturnType<typeof offeringRepo.findMany>>[number]): CourseOfferingJoined {

@@ -1,5 +1,7 @@
+import { authorizePage } from "@/permissions";
 import { PosterGallery } from "@/features/posters/poster-gallery";
 
-export default function PostersPage() {
+export default async function PostersPage() {
+  await authorizePage("read", "Poster");
   return <PosterGallery />;
 }

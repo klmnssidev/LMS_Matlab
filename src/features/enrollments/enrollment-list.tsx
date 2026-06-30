@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/empty";
 import { SkeletonTable } from "@/components/loading-skeletons";
 import { useEnrollments } from "@/features/enrollments/hooks/use-enrollments";
+import { Can } from "@/permissions/components/can";
 
 const statusItems = [
   { label: "All Status", value: "" },
@@ -61,9 +62,11 @@ export function EnrollmentList() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Enrollments</h1>
-        <Button render={<Link href="/enrollments/new" />}>
-          <Plus className="size-4" /> New Enrollment
-        </Button>
+        <Can I="create" a="Enrollment">
+          <Button render={<Link href="/enrollments/new" />}>
+            <Plus className="size-4" /> New Enrollment
+          </Button>
+        </Can>
       </div>
 
       <div className="flex gap-3">

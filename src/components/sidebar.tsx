@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { useAbility } from "@/features/auth/hooks/use-ability";
+import type { Subject } from "@/permissions";
 import {
   LayoutDashboard,
   Users,
@@ -18,41 +19,40 @@ import {
   TableProperties,
   FileSpreadsheet,
 } from "lucide-react";
-
-type Role = "Admin" | "Teacher" | "Student";
+import { useUser } from "@clerk/nextjs";
 
 type NavItem = {
   href: string;
   label: string;
   icon: React.ElementType;
-  roles: Role[];
+  subject: Subject;
+  action: "read" | "manage";
 };
 
 const allNavItems: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["Admin", "Teacher", "Student"] },
-  { href: "/students", label: "Students", icon: Users, roles: ["Admin", "Teacher"] },
-  { href: "/teachers", label: "Teachers", icon: GraduationCap, roles: ["Admin"] },
-  { href: "/courses", label: "Courses", icon: BookOpen, roles: ["Admin", "Teacher", "Student"] },
-  { href: "/enrollments", label: "Enrollments", icon: ClipboardList, roles: ["Admin", "Teacher"] },
-  { href: "/attendance", label: "Attendance", icon: CalendarCheck, roles: ["Admin", "Teacher"] },
-  { href: "/course-offerings", label: "Course Offerings", icon: TableProperties, roles: ["Admin"] },
-  { href: "/exam-results", label: "Exam Results", icon: FileSpreadsheet, roles: ["Admin", "Teacher"] },
-  { href: "/posters", label: "Posters", icon: ImageIcon, roles: ["Admin", "Teacher", "Student"] },
-  { href: "/my-courses", label: "My Courses", icon: BookMarked, roles: ["Student"] },
-  { href: "/my-grades", label: "My Grades", icon: Trophy, roles: ["Student"] },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, subject: "Dashboard", action: "read" },
+  { href: "/students", label: "Students", icon: Users, subject: "Student", action: "read" },
+  { href: "/teachers", label: "Teachers", icon: GraduationCap, subject: "Teacher", action: "read" },
+  { href: "/courses", label: "Courses", icon: BookOpen, subject: "Course", action: "read" },
+  { href: "/enrollments", label: "Enrollments", icon: ClipboardList, subject: "Enrollment", action: "read" },
+  { href: "/attendance", label: "Attendance", icon: CalendarCheck, subject: "Attendance", action: "read" },
+  { href: "/course-offerings", label: "Course Offerings", icon: TableProperties, subject: "CourseOffering", action: "read" },
+  { href: "/exam-results", label: "Exam Results", icon: FileSpreadsheet, subject: "ExamResult", action: "read" },
+  { href: "/posters", label: "Posters", icon: ImageIcon, subject: "Poster", action: "read" },
+  { href: "/my-courses", label: "My Courses", icon: BookMarked, subject: "MyEnrollments", action: "read" },
+  { href: "/my-grades", label: "My Grades", icon: Trophy, subject: "MyGrades", action: "read" },
 ];
 
 export function Sidebar() {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
-  const { user } = useUser();
+  const { ability, role, isLoading } = useAbility();
 
   useEffect(() => { setMounted(true); }, []);
 
-  const role = (user?.publicMetadata?.role as Role) ?? "Student";
-  const navItems = "useState" in globalThis || mounted
-    ? allNavItems.filter((item) => item.roles.includes(role))
-    : allNavItems.filter((item) => item.roles.includes("Student" as Role));
+  const navItems = mounted
+    ? allNavItems.filter((item) => ability?.can(item.action, item.subject) ?? false)
+    : [];
 
   return (
     <aside className="w-64 border-r bg-sidebar flex flex-col">
@@ -87,7 +87,9 @@ export function Sidebar() {
         })}
       </nav>
       <div className="shrink-0 border-t border-sidebar-border p-3">
-        <span className="text-xs text-sidebar-foreground/50">Role: {role}</span>
+        <span className="text-xs text-sidebar-foreground/50">
+          {isLoading ? "Loading..." : `Role: ${role ?? "Unknown"}`}
+        </span>
       </div>
     </aside>
   );

@@ -1,5 +1,6 @@
 import { prisma } from "@/server/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import type { AuthorizationScope } from "@/permissions";
 
 export type EnrollmentFilters = {
   studentId?: number;
@@ -7,8 +8,18 @@ export type EnrollmentFilters = {
   status?: string;
 };
 
-export async function findMany(filters: EnrollmentFilters) {
-  const where: Prisma.EnrollmentWhereInput = {};
+function applyScope(scope?: AuthorizationScope): Prisma.EnrollmentWhereInput {
+  if (scope?.role === "Teacher") {
+    return { offering: { teacherId: scope.teacherId } };
+  }
+  if (scope?.role === "Student") {
+    return { studentId: scope.studentId };
+  }
+  return {};
+}
+
+export async function findMany(filters: EnrollmentFilters, scope?: AuthorizationScope) {
+  const where: Prisma.EnrollmentWhereInput = { ...applyScope(scope) };
 
   if (filters.studentId) where.studentId = filters.studentId;
   if (filters.offeringId) where.offeringId = filters.offeringId;
@@ -29,9 +40,9 @@ export async function findMany(filters: EnrollmentFilters) {
   });
 }
 
-export async function findById(id: number) {
-  return prisma.enrollment.findUnique({
-    where: { enrollmentId: id },
+export async function findById(id: number, scope?: AuthorizationScope) {
+  return prisma.enrollment.findFirst({
+    where: { enrollmentId: id, ...applyScope(scope) },
     include: {
       student: true,
       offering: {
@@ -56,8 +67,8 @@ export async function remove(id: number) {
   return prisma.enrollment.delete({ where: { enrollmentId: id } });
 }
 
-export async function count(filters: EnrollmentFilters) {
-  const where: Prisma.EnrollmentWhereInput = {};
+export async function count(filters: EnrollmentFilters, scope?: AuthorizationScope) {
+  const where: Prisma.EnrollmentWhereInput = { ...applyScope(scope) };
 
   if (filters.studentId) where.studentId = filters.studentId;
   if (filters.offeringId) where.offeringId = filters.offeringId;

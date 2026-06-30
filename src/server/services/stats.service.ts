@@ -1,4 +1,6 @@
 import { prisma } from "@/server/lib/prisma";
+import * as offeringService from "@/server/services/course-offering.service";
+import type { AuthorizationScope } from "@/permissions";
 
 type StudentByDept = { department_name: string; count: number };
 type EnrollTrend = { semester_name: string; count: number };
@@ -134,4 +136,31 @@ export async function getTeacherStats(teacherId: number): Promise<TeacherStats> 
     totalStudents: Number(studentCount[0]?.count ?? 0),
     upcomingExams: exams,
   };
+}
+
+export async function getMyStats(scope: AuthorizationScope) {
+  if (scope.role === "Admin") {
+    return getAdminStats();
+  }
+
+  if (scope.role === "Teacher") {
+    const [stats, offerings] = await Promise.all([
+      getTeacherStats(scope.teacherId),
+      offeringService.list({}, scope),
+    ]);
+    return {
+      ...stats,
+      offerings: offerings.map((o) => ({
+        offering_id: o.offeringId,
+        course_code: o.courseCode,
+        course_name: o.courseName,
+        section_name: o.sectionName,
+        semester_name: o.semesterName,
+        room_code: o.roomCode,
+        max_students: o.maxStudents,
+      })),
+    };
+  }
+
+  return getStudentStats(scope.studentId);
 }

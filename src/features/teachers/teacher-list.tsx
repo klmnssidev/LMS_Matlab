@@ -31,6 +31,7 @@ import {
 import { SkeletonTable } from "@/components/loading-skeletons";
 import { useTeachers } from "@/features/teachers/hooks/use-teachers";
 import { useDepartments } from "@/shared/hooks/use-departments";
+import { Can } from "@/permissions/components/can";
 
 export function TeacherList() {
   const [search, setSearch] = useState("");
@@ -56,10 +57,12 @@ export function TeacherList() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
-        <Button render={<Link href="/teachers/new" />}>
-          <Plus data-icon="inline-start" />
-          Add Teacher
-        </Button>
+        <Can I="create" a="Teacher">
+          <Button render={<Link href="/teachers/new" />}>
+            <Plus data-icon="inline-start" />
+            Add Teacher
+          </Button>
+        </Can>
       </div>
 
       <div className="flex gap-3">

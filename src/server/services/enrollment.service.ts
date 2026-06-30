@@ -1,6 +1,10 @@
 import * as enrollmentRepo from "@/server/repositories/enrollment.repository";
+import * as studentRepo from "@/server/repositories/student.repository";
+import * as courseOfferingRepo from "@/server/repositories/course-offering.repository";
 import type { EnrollmentFilters } from "@/server/repositories/enrollment.repository";
 import type { CreateEnrollment, UpdateEnrollment, EnrollmentJoined } from "@/server/schemas/enrollment.schema";
+import type { AuthorizationScope } from "@/permissions";
+import { ForbiddenError } from "@/permissions/errors";
 
 function toEnrollmentJoined(row: Awaited<ReturnType<typeof enrollmentRepo.findMany>>[number]): EnrollmentJoined {
   return {
@@ -18,18 +22,30 @@ function toEnrollmentJoined(row: Awaited<ReturnType<typeof enrollmentRepo.findMa
   };
 }
 
-export async function list(filters: EnrollmentFilters) {
-  const rows = await enrollmentRepo.findMany(filters);
+export async function list(filters: EnrollmentFilters, scope?: AuthorizationScope) {
+  const rows = await enrollmentRepo.findMany(filters, scope);
   return rows.map(toEnrollmentJoined);
 }
 
-export async function getById(id: number) {
-  const row = await enrollmentRepo.findById(id);
+export async function getById(id: number, scope?: AuthorizationScope) {
+  const row = await enrollmentRepo.findById(id, scope);
   if (!row) return null;
   return toEnrollmentJoined(row);
 }
 
 export async function create(data: CreateEnrollment) {
+  const [student, offering] = await Promise.all([
+    studentRepo.findById(data.studentId),
+    courseOfferingRepo.findById(data.offeringId),
+  ]);
+
+  if (!student) throw new Error("Student not found");
+  if (!offering) throw new Error("Course offering not found");
+
+  if (student.departmentId !== offering.course.departmentId) {
+    throw new ForbiddenError("Course does not belong to student's department");
+  }
+
   const row = await enrollmentRepo.create({
     enrollmentDate: new Date(data.enrollmentDate),
     status: data.status,
@@ -40,7 +56,10 @@ export async function create(data: CreateEnrollment) {
   return row;
 }
 
-export async function update(id: number, data: UpdateEnrollment) {
+export async function update(id: number, data: UpdateEnrollment, scope?: AuthorizationScope) {
+  const existing = await enrollmentRepo.findById(id, scope);
+  if (!existing) return null;
+
   const updateData: Record<string, unknown> = {};
   if (data.enrollmentDate !== undefined) updateData.enrollmentDate = new Date(data.enrollmentDate);
   if (data.status !== undefined) updateData.status = data.status;
@@ -52,10 +71,12 @@ export async function update(id: number, data: UpdateEnrollment) {
   return row;
 }
 
-export async function remove(id: number) {
+export async function remove(id: number, scope?: AuthorizationScope) {
+  const existing = await enrollmentRepo.findById(id, scope);
+  if (!existing) return null;
   return enrollmentRepo.remove(id);
 }
 
-export async function count(filters: EnrollmentFilters) {
-  return enrollmentRepo.count(filters);
+export async function count(filters: EnrollmentFilters, scope?: AuthorizationScope) {
+  return enrollmentRepo.count(filters, scope);
 }

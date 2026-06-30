@@ -1,5 +1,6 @@
 import { prisma } from "@/server/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import type { AuthorizationScope } from "@/permissions";
 
 export type TeacherFilters = {
   departmentId?: number;
@@ -8,8 +9,15 @@ export type TeacherFilters = {
   offset?: number;
 };
 
-export async function findMany(filters: TeacherFilters) {
-  const where: Prisma.TeacherWhereInput = {};
+function applyScope(scope?: AuthorizationScope): Prisma.TeacherWhereInput {
+  if (scope?.role === "Teacher") {
+    return { teacherId: scope.teacherId };
+  }
+  return {};
+}
+
+export async function findMany(filters: TeacherFilters, scope?: AuthorizationScope) {
+  const where: Prisma.TeacherWhereInput = { ...applyScope(scope) };
 
   if (filters.departmentId) {
     where.departmentId = filters.departmentId;
@@ -30,16 +38,16 @@ export async function findMany(filters: TeacherFilters) {
   });
 }
 
-export async function findById(id: number) {
-  return prisma.teacher.findUnique({
-    where: { teacherId: id },
-    include: { department: true, courseOfferings: { include: { course: true, semester: true, classroom: true } } },
+export async function findById(id: number, scope?: AuthorizationScope) {
+  return prisma.teacher.findFirst({
+    where: { teacherId: id, ...applyScope(scope) },
+    include: { department: true },
   });
 }
 
-export async function findByClerkId(clerkUserId: string) {
+export async function findByEmail(email: string) {
   return prisma.teacher.findUnique({
-    where: { clerkUserId },
+    where: { email },
     include: { department: true },
   });
 }
@@ -48,13 +56,6 @@ export async function findByEmployeeNumber(employeeNumber: string) {
   return prisma.teacher.findUnique({
     where: { employeeNumber },
     include: { department: true },
-  });
-}
-
-export async function linkToClerk(teacherId: number, clerkUserId: string) {
-  return prisma.teacher.update({
-    where: { teacherId },
-    data: { clerkUserId },
   });
 }
 
@@ -70,8 +71,8 @@ export async function remove(id: number) {
   return prisma.teacher.delete({ where: { teacherId: id } });
 }
 
-export async function count(filters: Omit<TeacherFilters, "limit" | "offset">) {
-  const where: Prisma.TeacherWhereInput = {};
+export async function count(filters: Omit<TeacherFilters, "limit" | "offset">, scope?: AuthorizationScope) {
+  const where: Prisma.TeacherWhereInput = { ...applyScope(scope) };
 
   if (filters.departmentId) {
     where.departmentId = filters.departmentId;

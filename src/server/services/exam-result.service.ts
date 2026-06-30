@@ -1,6 +1,7 @@
 import * as examResultRepo from "@/server/repositories/exam-result.repository";
 import type { ExamResultFilters } from "@/server/repositories/exam-result.repository";
 import type { CreateExamResult, UpdateExamResult, ExamResultJoined } from "@/server/schemas/exam-result.schema";
+import type { AuthorizationScope } from "@/permissions";
 
 function toExamResultJoined(row: Awaited<ReturnType<typeof examResultRepo.findMany>>[number]): ExamResultJoined {
   return {
@@ -14,13 +15,13 @@ function toExamResultJoined(row: Awaited<ReturnType<typeof examResultRepo.findMa
   };
 }
 
-export async function list(filters: ExamResultFilters) {
-  const rows = await examResultRepo.findMany(filters);
+export async function list(filters: ExamResultFilters, scope?: AuthorizationScope) {
+  const rows = await examResultRepo.findMany(filters, scope);
   return rows.map(toExamResultJoined);
 }
 
-export async function getById(id: number) {
-  const row = await examResultRepo.findById(id);
+export async function getById(id: number, scope?: AuthorizationScope) {
+  const row = await examResultRepo.findById(id, scope);
   if (!row) return null;
   return toExamResultJoined(row);
 }
@@ -34,7 +35,10 @@ export async function create(data: CreateExamResult) {
   return row;
 }
 
-export async function update(id: number, data: UpdateExamResult) {
+export async function update(id: number, data: UpdateExamResult, scope?: AuthorizationScope) {
+  const existing = await examResultRepo.findById(id, scope);
+  if (!existing) return null;
+
   const updateData: Record<string, unknown> = {};
   if (data.score !== undefined) updateData.score = data.score;
   if (data.examId !== undefined) updateData.exam = { connect: { examId: data.examId } };
@@ -44,10 +48,12 @@ export async function update(id: number, data: UpdateExamResult) {
   return row;
 }
 
-export async function remove(id: number) {
+export async function remove(id: number, scope?: AuthorizationScope) {
+  const existing = await examResultRepo.findById(id, scope);
+  if (!existing) return null;
   return examResultRepo.remove(id);
 }
 
-export async function count(filters: ExamResultFilters) {
-  return examResultRepo.count(filters);
+export async function count(filters: ExamResultFilters, scope?: AuthorizationScope) {
+  return examResultRepo.count(filters, scope);
 }

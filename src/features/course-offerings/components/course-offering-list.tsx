@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { SkeletonTable } from "@/components/loading-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { useOfferings, useDeleteOffering } from "@/features/course-offerings/hooks/use-course-offerings";
+import { Can } from "@/permissions/components/can";
 
 export function CourseOfferingList() {
   const { data, isLoading, error } = useOfferings();
@@ -39,9 +40,11 @@ export function CourseOfferingList() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Course Offerings</h1>
-        <Button render={<Link href="/course-offerings/new" />}>
-          <Plus className="size-4" /> New Offering
-        </Button>
+        <Can I="create" a="CourseOffering">
+          <Button render={<Link href="/course-offerings/new" />}>
+            <Plus className="size-4" /> New Offering
+          </Button>
+        </Can>
       </div>
 
       <Card>
@@ -75,21 +78,25 @@ export function CourseOfferingList() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" render={<Link href={`/course-offerings/${o.offeringId}/edit`} />}>
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteOffering.isPending}
-                        onClick={async () => {
-                          if (confirm("Delete this offering?")) {
-                            await deleteOffering.mutateAsync(o.offeringId);
-                          }
-                        }}
-                      >
-                        Delete
-                      </Button>
+                      <Can I="update" a="CourseOffering">
+                        <Button variant="outline" size="sm" render={<Link href={`/course-offerings/${o.offeringId}/edit`} />}>
+                          Edit
+                        </Button>
+                      </Can>
+                      <Can I="delete" a="CourseOffering">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteOffering.isPending}
+                          onClick={async () => {
+                            if (confirm("Delete this offering?")) {
+                              await deleteOffering.mutateAsync(o.offeringId);
+                            }
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Can>
                     </div>
                   </TableCell>
                 </TableRow>

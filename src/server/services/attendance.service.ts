@@ -1,6 +1,7 @@
 import * as attendanceRepo from "@/server/repositories/attendance.repository";
 import type { AttendanceFilters } from "@/server/repositories/attendance.repository";
 import type { CreateAttendance, UpdateAttendance, AttendanceJoined } from "@/server/schemas/attendance.schema";
+import type { AuthorizationScope } from "@/permissions";
 
 function toAttendanceJoined(row: Awaited<ReturnType<typeof attendanceRepo.findMany>>[number]): AttendanceJoined {
   return {
@@ -14,13 +15,13 @@ function toAttendanceJoined(row: Awaited<ReturnType<typeof attendanceRepo.findMa
   };
 }
 
-export async function list(filters: AttendanceFilters) {
-  const rows = await attendanceRepo.findMany(filters);
+export async function list(filters: AttendanceFilters, scope?: AuthorizationScope) {
+  const rows = await attendanceRepo.findMany(filters, scope);
   return rows.map(toAttendanceJoined);
 }
 
-export async function getById(id: number) {
-  const row = await attendanceRepo.findById(id);
+export async function getById(id: number, scope?: AuthorizationScope) {
+  const row = await attendanceRepo.findById(id, scope);
   if (!row) return null;
   return toAttendanceJoined(row);
 }
@@ -35,7 +36,10 @@ export async function create(data: CreateAttendance) {
   return row;
 }
 
-export async function update(id: number, data: UpdateAttendance) {
+export async function update(id: number, data: UpdateAttendance, scope?: AuthorizationScope) {
+  const existing = await attendanceRepo.findById(id, scope);
+  if (!existing) return null;
+
   const updateData: Record<string, unknown> = {};
   if (data.attendanceDate !== undefined) updateData.attendanceDate = new Date(data.attendanceDate);
   if (data.status !== undefined) updateData.status = data.status;
@@ -46,10 +50,12 @@ export async function update(id: number, data: UpdateAttendance) {
   return row;
 }
 
-export async function remove(id: number) {
+export async function remove(id: number, scope?: AuthorizationScope) {
+  const existing = await attendanceRepo.findById(id, scope);
+  if (!existing) return null;
   return attendanceRepo.remove(id);
 }
 
-export async function count(filters: AttendanceFilters) {
-  return attendanceRepo.count(filters);
+export async function count(filters: AttendanceFilters, scope?: AuthorizationScope) {
+  return attendanceRepo.count(filters, scope);
 }

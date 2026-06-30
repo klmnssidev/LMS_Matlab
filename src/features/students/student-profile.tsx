@@ -22,6 +22,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonProfile } from "@/components/loading-skeletons";
+import { Can } from "@/permissions/components/can";
 import { useStudent, useDeleteStudent } from "@/features/students/hooks/use-students";
 
 type Enrollment = {
@@ -66,14 +67,18 @@ export function StudentProfile({ id }: { id: number }) {
         </Button>
         <h1 className="text-3xl font-bold tracking-tight">{student.studentName}</h1>
         <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" render={<Link href={`/students/${student.studentId}/edit`} />}>
-            <Pencil data-icon="inline-start" />
-            Edit
-          </Button>
-          <Button variant="destructive" size="sm" disabled={isDeleting} onClick={handleDelete}>
-            <Trash2 data-icon="inline-start" />
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
+          <Can I="update" a="Student">
+            <Button variant="outline" size="sm" render={<Link href={`/students/${student.studentId}/edit`} />}>
+              <Pencil data-icon="inline-start" />
+              Edit
+            </Button>
+          </Can>
+          <Can I="delete" a="Student">
+            <Button variant="destructive" size="sm" disabled={isDeleting} onClick={handleDelete}>
+              <Trash2 data-icon="inline-start" />
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </Can>
         </div>
       </div>
 

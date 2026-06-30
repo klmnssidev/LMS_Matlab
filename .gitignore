@@ -11,6 +11,11 @@ AGENTS.md
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.agents/
+skills-lock.json 
+schema_pg.sql 
+seed_pg.sql 
+
 
 # testing
 /coverage

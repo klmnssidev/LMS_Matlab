@@ -12,6 +12,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectI
 import { Field, FieldLabel } from "@/components/ui/field";
 import { useExamResults, useDeleteExamResult } from "@/features/exam-results/hooks/use-exam-results";
 import { useExams } from "@/shared/hooks/use-exams";
+import { Can } from "@/permissions/components/can";
 
 export function ExamResultList() {
   const [selectedExamId, setSelectedExamId] = useState<number | undefined>();
@@ -45,9 +46,11 @@ export function ExamResultList() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Exam Results</h1>
-        <Button render={<Link href="/exam-results/new" />}>
-          <Plus className="size-4" /> New Result
-        </Button>
+        <Can I="create" a="ExamResult">
+          <Button render={<Link href="/exam-results/new" />}>
+            <Plus className="size-4" /> New Result
+          </Button>
+        </Can>
       </div>
 
       <Card>
@@ -109,18 +112,20 @@ export function ExamResultList() {
                       <Badge variant={Number(pct) >= 50 ? "default" : "destructive"}>{pct}%</Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteExamResult.isPending}
-                        onClick={async () => {
-                          if (confirm("Delete this result?")) {
-                            await deleteExamResult.mutateAsync(r.resultId);
-                          }
-                        }}
-                      >
-                        Delete
-                      </Button>
+                      <Can I="delete" a="ExamResult">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteExamResult.isPending}
+                          onClick={async () => {
+                            if (confirm("Delete this result?")) {
+                              await deleteExamResult.mutateAsync(r.resultId);
+                            }
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Can>
                     </TableCell>
                   </TableRow>
                 );

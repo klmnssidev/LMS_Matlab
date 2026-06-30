@@ -1,6 +1,7 @@
 import * as teacherRepo from "@/server/repositories/teacher.repository";
 import type { TeacherFilters } from "@/server/repositories/teacher.repository";
 import type { CreateTeacher, UpdateTeacher, TeacherWithDept } from "@/server/schemas/teacher.schema";
+import type { AuthorizationScope } from "@/permissions";
 
 function toTeacherWithDept(row: Awaited<ReturnType<typeof teacherRepo.findMany>>[number]): TeacherWithDept {
   return {
@@ -16,25 +17,15 @@ function toTeacherWithDept(row: Awaited<ReturnType<typeof teacherRepo.findMany>>
   };
 }
 
-export async function list(filters: TeacherFilters) {
-  const rows = await teacherRepo.findMany(filters);
+export async function list(filters: TeacherFilters, scope?: AuthorizationScope) {
+  const rows = await teacherRepo.findMany(filters, scope);
   return rows.map(toTeacherWithDept);
 }
 
-export async function getById(id: number) {
-  const row = await teacherRepo.findById(id);
+export async function getById(id: number, scope?: AuthorizationScope) {
+  const row = await teacherRepo.findById(id, scope);
   if (!row) return null;
-  return {
-    ...toTeacherWithDept(row),
-    courseOfferings: row.courseOfferings.map((o) => ({
-      offeringId: o.offeringId,
-      courseCode: o.course.courseCode,
-      courseName: o.course.courseName,
-      semesterName: o.semester.semesterName,
-      roomCode: o.classroom.roomCode,
-      sectionName: o.sectionName,
-    })),
-  };
+  return toTeacherWithDept(row);
 }
 
 export async function create(data: CreateTeacher) {
@@ -66,6 +57,6 @@ export async function remove(id: number) {
   return teacherRepo.remove(id);
 }
 
-export async function count(filters: Omit<TeacherFilters, "limit" | "offset">) {
-  return teacherRepo.count(filters);
+export async function count(filters: Omit<TeacherFilters, "limit" | "offset">, scope?: AuthorizationScope) {
+  return teacherRepo.count(filters, scope);
 }

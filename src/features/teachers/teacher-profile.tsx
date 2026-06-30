@@ -21,6 +21,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { SkeletonProfile } from "@/components/loading-skeletons";
+import { Can } from "@/permissions/components/can";
 import { useTeacher, useDeleteTeacher } from "@/features/teachers/hooks/use-teachers";
 
 export function TeacherProfile({ id }: { id: number }) {
@@ -49,14 +50,18 @@ export function TeacherProfile({ id }: { id: number }) {
         </Button>
         <h1 className="text-3xl font-bold tracking-tight">{teacher.teacherName}</h1>
         <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" render={<Link href={`/teachers/${teacher.teacherId}/edit`} />}>
-            <Pencil data-icon="inline-start" />
-            Edit
-          </Button>
-          <Button variant="destructive" size="sm" disabled={isDeleting} onClick={handleDelete}>
-            <Trash2 data-icon="inline-start" />
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
+          <Can I="update" a="Teacher">
+            <Button variant="outline" size="sm" render={<Link href={`/teachers/${teacher.teacherId}/edit`} />}>
+              <Pencil data-icon="inline-start" />
+              Edit
+            </Button>
+          </Can>
+          <Can I="delete" a="Teacher">
+            <Button variant="destructive" size="sm" disabled={isDeleting} onClick={handleDelete}>
+              <Trash2 data-icon="inline-start" />
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </Can>
         </div>
       </div>
 

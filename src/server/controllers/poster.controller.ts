@@ -1,22 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as posterService from "@/server/services/poster.service";
-import { requireRole } from "@/server/permissions/student.ability";
+import { authorize } from "@/permissions";
 
-export async function list(req: NextRequest) {
+function errorResponse(error: unknown) {
+  const message = error instanceof Error ? error.message : "Internal server error";
+  const status = message.includes("Forbidden") ? 403 : 500;
+  return NextResponse.json({ error: message }, { status });
+}
+
+export async function list() {
   try {
-    await requireRole("Admin", "Teacher", "Student");
+    await authorize("read", "Poster");
     const posters = await posterService.list();
     return NextResponse.json(posters);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("Forbidden") ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return errorResponse(error);
   }
 }
 
 export async function getById(req: NextRequest) {
   try {
-    await requireRole("Admin", "Teacher", "Student");
+    await authorize("read", "Poster");
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
@@ -27,15 +31,13 @@ export async function getById(req: NextRequest) {
       headers: { "Content-Type": "image/png" },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("Forbidden") ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return errorResponse(error);
   }
 }
 
 export async function create(req: NextRequest) {
   try {
-    await requireRole("Admin");
+    await authorize("create", "Poster");
     const formData = await req.formData();
     const title = formData.get("title") as string | null;
     const file = formData.get("image") as File | null;
@@ -48,23 +50,19 @@ export async function create(req: NextRequest) {
     const poster = await posterService.create(title, buffer);
     return NextResponse.json(poster, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("Forbidden") ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return errorResponse(error);
   }
 }
 
 export async function remove(req: NextRequest) {
   try {
-    await requireRole("Admin");
+    await authorize("delete", "Poster");
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
     await posterService.remove(Number(id));
     return NextResponse.json({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("Forbidden") ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return errorResponse(error);
   }
 }

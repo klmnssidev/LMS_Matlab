@@ -1,6 +1,7 @@
 import * as courseRepo from "@/server/repositories/course.repository";
 import type { CourseFilters } from "@/server/repositories/course.repository";
 import type { CreateCourse, UpdateCourse, CourseWithDept } from "@/server/schemas/course.schema";
+import type { AuthorizationScope } from "@/permissions";
 
 function toCourseWithDept(row: Awaited<ReturnType<typeof courseRepo.findMany>>[number]): CourseWithDept {
   return {
@@ -14,13 +15,13 @@ function toCourseWithDept(row: Awaited<ReturnType<typeof courseRepo.findMany>>[n
   };
 }
 
-export async function list(filters: CourseFilters) {
-  const rows = await courseRepo.findMany(filters);
+export async function list(filters: CourseFilters, scope?: AuthorizationScope) {
+  const rows = await courseRepo.findMany(filters, scope);
   return rows.map(toCourseWithDept);
 }
 
-export async function getById(id: number) {
-  const row = await courseRepo.findById(id);
+export async function getById(id: number, scope?: AuthorizationScope) {
+  const row = await courseRepo.findById(id, scope);
   if (!row) return null;
 
   return {
@@ -60,6 +61,6 @@ export async function remove(id: number) {
   return courseRepo.remove(id);
 }
 
-export async function count(filters: Omit<CourseFilters, "limit" | "offset">) {
-  return courseRepo.count(filters);
+export async function count(filters: Omit<CourseFilters, "limit" | "offset">, scope?: AuthorizationScope) {
+  return courseRepo.count(filters, scope);
 }

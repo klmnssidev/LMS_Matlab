@@ -1,5 +1,6 @@
 import { prisma } from "@/server/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import type { AuthorizationScope } from "@/permissions";
 
 export type OfferingFilters = {
   courseId?: number;
@@ -7,8 +8,18 @@ export type OfferingFilters = {
   semesterId?: number;
 };
 
-export async function findMany(filters: OfferingFilters = {}) {
-  const where: Prisma.CourseOfferingWhereInput = {};
+function applyScope(scope?: AuthorizationScope): Prisma.CourseOfferingWhereInput {
+  if (scope?.role === "Teacher") {
+    return { teacherId: scope.teacherId };
+  }
+  if (scope?.role === "Student") {
+    return { enrollments: { some: { studentId: scope.studentId } } };
+  }
+  return {};
+}
+
+export async function findMany(filters: OfferingFilters = {}, scope?: AuthorizationScope) {
+  const where: Prisma.CourseOfferingWhereInput = { ...applyScope(scope) };
 
   if (filters.courseId) where.courseId = filters.courseId;
   if (filters.teacherId) where.teacherId = filters.teacherId;
@@ -26,9 +37,9 @@ export async function findMany(filters: OfferingFilters = {}) {
   });
 }
 
-export async function findById(id: number) {
-  return prisma.courseOffering.findUnique({
-    where: { offeringId: id },
+export async function findById(id: number, scope?: AuthorizationScope) {
+  return prisma.courseOffering.findFirst({
+    where: { offeringId: id, ...applyScope(scope) },
     include: {
       course: true,
       teacher: true,
@@ -50,8 +61,8 @@ export async function remove(id: number) {
   return prisma.courseOffering.delete({ where: { offeringId: id } });
 }
 
-export async function count(filters: OfferingFilters = {}) {
-  const where: Prisma.CourseOfferingWhereInput = {};
+export async function count(filters: OfferingFilters = {}, scope?: AuthorizationScope) {
+  const where: Prisma.CourseOfferingWhereInput = { ...applyScope(scope) };
 
   if (filters.courseId) where.courseId = filters.courseId;
   if (filters.teacherId) where.teacherId = filters.teacherId;

@@ -1,6 +1,7 @@
 import * as studentRepo from "@/server/repositories/student.repository";
 import type { StudentFilters } from "@/server/repositories/student.repository";
 import type { CreateStudent, UpdateStudent, StudentWithDept } from "@/server/schemas/student.schema";
+import type { AuthorizationScope } from "@/permissions";
 
 function toStudentWithDept(row: Awaited<ReturnType<typeof studentRepo.findMany>>[number]): StudentWithDept {
   return {
@@ -18,13 +19,13 @@ function toStudentWithDept(row: Awaited<ReturnType<typeof studentRepo.findMany>>
   };
 }
 
-export async function list(filters: StudentFilters) {
-  const rows = await studentRepo.findMany(filters);
+export async function list(filters: StudentFilters, scope?: AuthorizationScope) {
+  const rows = await studentRepo.findMany(filters, scope);
   return rows.map(toStudentWithDept);
 }
 
-export async function getById(id: number) {
-  const row = await studentRepo.findById(id);
+export async function getById(id: number, scope?: AuthorizationScope) {
+  const row = await studentRepo.findById(id, scope);
   if (!row) return null;
   return toStudentWithDept(row);
 }
@@ -62,6 +63,6 @@ export async function remove(id: number) {
   return studentRepo.remove(id);
 }
 
-export async function count(filters: Omit<StudentFilters, "limit" | "offset">) {
-  return studentRepo.count(filters);
+export async function count(filters: Omit<StudentFilters, "limit" | "offset">, scope?: AuthorizationScope) {
+  return studentRepo.count(filters, scope);
 }

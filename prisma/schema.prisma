@@ -6,6 +6,38 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  ADMIN
+  STUDENT
+  TEACHER
+}
+
+model UserAccount {
+  id          Int       @id @default(autoincrement())
+  clerkUserId String?   @unique @map("clerk_user_id")
+  email       String    @unique @map("email")
+  role        Role
+  studentId   Int?      @unique @map("student_id")
+  teacherId   Int?      @unique @map("teacher_id")
+  isActive    Boolean   @default(true) @map("is_active")
+
+  student Student?  @relation(fields: [studentId], references: [studentId])
+  teacher Teacher?  @relation(fields: [teacherId], references: [teacherId])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_accounts")
+}
+
+model Admin {
+  adminId   Int    @id @default(autoincrement()) @map("admin_id")
+  adminName String @map("admin_name") @db.VarChar(120)
+  email     String @unique
+
+  @@map("admins")
+}
+
 model Department {
   departmentId   Int          @id @default(autoincrement()) @map("department_id")
   departmentCode String       @unique @map("department_code") @db.VarChar(10)
@@ -30,11 +62,11 @@ model Student {
   dateOfBirth   DateTime?    @map("date_of_birth") @db.Date
   admissionYear Int          @map("admission_year")
   status        String?      @default("Active") @map("status") @db.VarChar(20)
-  clerkUserId   String?      @unique @map("clerk_user_id")
   studentNumber String?      @unique @map("student_number")
 
-  department  Department    @relation(fields: [departmentId], references: [departmentId])
-  enrollments Enrollment[]
+  department   Department    @relation(fields: [departmentId], references: [departmentId])
+  enrollments  Enrollment[]
+  userAccount  UserAccount?
 
   @@map("students")
 }
@@ -47,11 +79,11 @@ model Teacher {
   phone          String?      @map("phone") @db.VarChar(30)
   academicRank   String       @map("academic_rank") @db.VarChar(50)
   hireDate       DateTime     @map("hire_date") @db.Date
-  clerkUserId    String?      @unique @map("clerk_user_id")
   employeeNumber String?      @unique @map("employee_number")
 
   department       Department       @relation(fields: [departmentId], references: [departmentId])
   courseOfferings  CourseOffering[]
+  userAccount      UserAccount?
 
   @@map("teachers")
 }

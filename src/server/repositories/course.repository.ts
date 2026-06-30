@@ -1,5 +1,6 @@
 import { prisma } from "@/server/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import type { AuthorizationScope } from "@/permissions";
 
 export type CourseFilters = {
   search?: string;
@@ -7,8 +8,15 @@ export type CourseFilters = {
   offset?: number;
 };
 
-export async function findMany(filters: CourseFilters) {
-  const where: Prisma.CourseWhereInput = {};
+function applyScope(scope?: AuthorizationScope): Prisma.CourseWhereInput {
+  if (scope?.role === "Student") {
+    return { departmentId: scope.departmentId };
+  }
+  return {};
+}
+
+export async function findMany(filters: CourseFilters, scope?: AuthorizationScope) {
+  const where: Prisma.CourseWhereInput = { ...applyScope(scope) };
 
   if (filters.search) {
     where.OR = [
@@ -26,9 +34,9 @@ export async function findMany(filters: CourseFilters) {
   });
 }
 
-export async function findById(id: number) {
-  return prisma.course.findUnique({
-    where: { courseId: id },
+export async function findById(id: number, scope?: AuthorizationScope) {
+  return prisma.course.findFirst({
+    where: { courseId: id, ...applyScope(scope) },
     include: {
       department: true,
       courseOfferings: {
@@ -54,8 +62,8 @@ export async function remove(id: number) {
   return prisma.course.delete({ where: { courseId: id } });
 }
 
-export async function count(filters: Omit<CourseFilters, "limit" | "offset">) {
-  const where: Prisma.CourseWhereInput = {};
+export async function count(filters: Omit<CourseFilters, "limit" | "offset">, scope?: AuthorizationScope) {
+  const where: Prisma.CourseWhereInput = { ...applyScope(scope) };
 
   if (filters.search) {
     where.OR = [

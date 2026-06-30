@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/empty";
 import { SkeletonTable } from "@/components/loading-skeletons";
 import { useAttendance } from "@/features/attendance/hooks/use-attendance";
+import { Can } from "@/permissions/components/can";
 
 function badgeVariant(status: string) {
   switch (status) {
@@ -52,9 +53,11 @@ export function AttendanceList() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Attendance</h1>
-        <Button render={<Link href="/attendance/new" />}>
-          <Plus className="size-4" /> Bulk Entry
-        </Button>
+        <Can I="create" a="Attendance">
+          <Button render={<Link href="/attendance/new" />}>
+            <Plus className="size-4" /> Bulk Entry
+          </Button>
+        </Can>
       </div>
 
       <div className="flex gap-3 flex-wrap">

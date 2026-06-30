@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/lib/prisma";
+import * as userAccountRepo from "@/server/repositories/user-account.repository";
 
 export async function POST(req: Request) {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
@@ -31,44 +32,76 @@ export async function POST(req: Request) {
 
   const { type, data } = evt;
 
-  if (type === "user.created" || type === "user.updated") {
-    const email = (data.email_addresses as Array<{ email_address: string }>)?.[0]?.email_address;
+  if (type === "user.created") {
     const userId = data.id as string;
+    const email = (data.email_addresses as Array<{ email_address: string }>)?.[0]?.email_address;
 
     if (!email) {
       return NextResponse.json({ error: "No email" }, { status: 400 });
     }
 
-    const [student, teacher] = await Promise.all([
-      prisma.student.findFirst({ where: { email }, select: { studentId: true } }),
-      prisma.teacher.findFirst({ where: { email }, select: { teacherId: true } }),
-    ]);
-
-    let role = "Unlinked";
-
-    if (student) {
-      const linkedStudent = await prisma.student.findUnique({
-        where: { studentId: student.studentId },
-        select: { clerkUserId: true },
-      });
-      if (linkedStudent?.clerkUserId) {
-        role = "Student";
-      }
-    } else if (teacher) {
-      const linkedTeacher = await prisma.teacher.findUnique({
-        where: { teacherId: teacher.teacherId },
-        select: { clerkUserId: true },
-      });
-      if (linkedTeacher?.clerkUserId) {
-        role = "Teacher";
-      }
+    const existing = await userAccountRepo.findByClerkId(userId);
+    if (existing) {
+      return NextResponse.json({ success: true });
     }
 
-    const { clerkClient } = await import("@clerk/nextjs/server");
-    const client = await clerkClient();
-    await client.users.updateUser(userId, {
-      publicMetadata: { role },
+    const linkedByEmail = await userAccountRepo.findByEmail(email);
+    if (linkedByEmail) {
+      return NextResponse.json({ success: true });
+    }
+
+    const student = await prisma.student.findFirst({
+      where: { email },
+      select: { studentId: true },
     });
+
+    if (student) {
+      const linked = await userAccountRepo.findByStudentId(student.studentId);
+      if (!linked) {
+        await userAccountRepo.create({
+          clerkUserId: userId,
+          email,
+          role: "STUDENT",
+          studentId: student.studentId,
+        });
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    const teacher = await prisma.teacher.findFirst({
+      where: { email },
+      select: { teacherId: true },
+    });
+
+    if (teacher) {
+      const linked = await userAccountRepo.findByTeacherId(teacher.teacherId);
+      if (!linked) {
+        await userAccountRepo.create({
+          clerkUserId: userId,
+          email,
+          role: "TEACHER",
+          teacherId: teacher.teacherId,
+        });
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    const admin = await prisma.admin.findFirst({
+      where: { email },
+      select: { adminId: true },
+    });
+
+    if (admin) {
+      const linked = await userAccountRepo.findByEmail(email);
+      if (!linked) {
+        await userAccountRepo.create({
+          clerkUserId: userId,
+          email,
+          role: "ADMIN",
+        });
+      }
+      return NextResponse.json({ success: true });
+    }
   }
 
   return NextResponse.json({ success: true });

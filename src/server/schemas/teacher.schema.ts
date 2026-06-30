@@ -8,7 +8,6 @@ export const TeacherSchema = z.object({
   phone: z.string().max(30).nullable(),
   academicRank: z.string().max(50),
   hireDate: z.string(),
-  clerkUserId: z.string().nullable().optional(),
   employeeNumber: z.string().nullable().optional(),
 });
 

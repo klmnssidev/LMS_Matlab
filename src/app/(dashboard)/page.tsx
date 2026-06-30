@@ -2,26 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { AdminDashboard } from "@/features/dashboard/admin-dashboard";
 import { TeacherDashboard } from "@/features/dashboard/teacher-dashboard";
 import { StudentDashboard } from "@/features/dashboard/student-dashboard";
+import { useAbility } from "@/features/auth/hooks/use-ability";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isLoaded } = useUser();
   const [mounted, setMounted] = useState(false);
-  const role = (user?.publicMetadata?.role as string) ?? "";
+  const { ability, role, isLoading } = useAbility();
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    if (mounted && isLoaded && (role === "" || role === "Unlinked")) {
+    if (mounted && !isLoading && !role) {
       router.replace("/complete-profile");
     }
-  }, [mounted, isLoaded, role, router]);
+  }, [mounted, isLoading, role, router]);
 
-  if (!mounted || !isLoaded) {
+  if (!mounted || isLoading) {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -30,7 +29,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (role === "" || role === "Unlinked") {
+  if (!role) {
     return null;
   }
 
