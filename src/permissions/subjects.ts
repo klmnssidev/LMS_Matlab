@@ -21,6 +21,8 @@ export const Subjects = [
   "MyProfile",
   "MyAttendance",
   "MyExams",
+  "MySchedule",
+  "MyNotifications",
 ] as const;
 
 export type Subject = (typeof Subjects)[number];

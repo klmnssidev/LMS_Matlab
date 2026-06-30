@@ -20,6 +20,8 @@ import {
   FileSpreadsheet,
   User,
   Calendar,
+  Bell,
+  Megaphone,
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
@@ -37,7 +39,10 @@ const allNavItems: NavItem[] = [
   { href: "/my-courses", label: "My Courses", icon: BookMarked, subject: "MyEnrollments", action: "read" },
   { href: "/my-attendance", label: "My Attendance", icon: CalendarCheck, subject: "MyAttendance", action: "read" },
   { href: "/my-exams", label: "My Exams", icon: Calendar, subject: "MyExams", action: "read" },
+  { href: "/schedule", label: "Schedule", icon: Calendar, subject: "MySchedule", action: "read" },
   { href: "/my-grades", label: "My Grades", icon: Trophy, subject: "MyGrades", action: "read" },
+  { href: "/notifications", label: "Notifications", icon: Bell, subject: "MyNotifications", action: "read" },
+  { href: "/announcements", label: "Announcements", icon: Megaphone, subject: "Announcement", action: "read" },
   { href: "/students", label: "Students", icon: Users, subject: "Student", action: "read" },
   { href: "/teachers", label: "Teachers", icon: GraduationCap, subject: "Teacher", action: "read" },
   { href: "/courses", label: "Courses", icon: BookOpen, subject: "Course", action: "read" },

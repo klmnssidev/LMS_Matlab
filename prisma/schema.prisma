@@ -21,8 +21,9 @@ model UserAccount {
   teacherId   Int?      @unique @map("teacher_id")
   isActive    Boolean   @default(true) @map("is_active")
 
-  student Student?  @relation(fields: [studentId], references: [studentId])
-  teacher Teacher?  @relation(fields: [teacherId], references: [teacherId])
+  student      Student?       @relation(fields: [studentId], references: [studentId])
+  teacher      Teacher?       @relation(fields: [teacherId], references: [teacherId])
+  notifications Notification[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -45,9 +46,10 @@ model Department {
   facultyName    String       @map("faculty_name") @db.VarChar(100)
   createdAt      DateTime?    @default(now()) @map("created_at") @db.Timestamp(6)
 
-  courses  Course[]
-  students Student[]
-  teachers Teacher[]
+  courses       Course[]
+  students      Student[]
+  teachers      Teacher[]
+  announcements Announcement[]
 
   @@map("departments")
 }
@@ -125,13 +127,16 @@ model Classroom {
 }
 
 model CourseOffering {
-  offeringId   Int    @id @default(autoincrement()) @map("offering_id")
-  courseId     Int    @map("course_id")
-  teacherId    Int    @map("teacher_id")
-  semesterId   Int    @map("semester_id")
-  classroomId  Int    @map("classroom_id")
-  sectionName  String @default("A") @map("section_name") @db.VarChar(10)
-  maxStudents  Int    @default(40) @map("max_students")
+  offeringId   Int     @id @default(autoincrement()) @map("offering_id")
+  courseId     Int     @map("course_id")
+  teacherId    Int     @map("teacher_id")
+  semesterId   Int     @map("semester_id")
+  classroomId  Int     @map("classroom_id")
+  sectionName  String  @default("A") @map("section_name") @db.VarChar(10)
+  maxStudents  Int     @default(40) @map("max_students")
+  dayOfWeek    Int?    @map("day_of_week")
+  startTime    String? @map("start_time") @db.VarChar(5)
+  endTime      String? @map("end_time") @db.VarChar(5)
 
   course      Course      @relation(fields: [courseId], references: [courseId])
   teacher     Teacher     @relation(fields: [teacherId], references: [teacherId])
@@ -207,4 +212,32 @@ model Poster {
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
 
   @@map("posters")
+}
+
+model Announcement {
+  announcementId Int      @id @default(autoincrement()) @map("announcement_id")
+  title          String   @map("title") @db.VarChar(200)
+  content        String   @map("content") @db.Text
+  departmentId   Int?     @map("department_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  department Department? @relation(fields: [departmentId], references: [departmentId])
+
+  @@map("announcements")
+}
+
+model Notification {
+  notificationId Int      @id @default(autoincrement()) @map("notification_id")
+  userAccountId  Int      @map("user_account_id")
+  type           String   @map("type") @db.VarChar(50)
+  title          String   @map("title") @db.VarChar(200)
+  message        String?  @map("message") @db.Text
+  link           String?  @map("link") @db.VarChar(255)
+  isRead         Boolean  @default(false) @map("is_read")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  userAccount UserAccount @relation(fields: [userAccountId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
