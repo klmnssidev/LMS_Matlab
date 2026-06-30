@@ -78,3 +78,38 @@ export async function count(filters: EnrollmentFilters, scope?: AuthorizationSco
 
   return prisma.enrollment.count({ where });
 }
+
+export async function findTranscriptEnrollments(
+  studentId: number,
+  semesterId?: number
+) {
+  const where: Prisma.EnrollmentWhereInput = {
+    studentId,
+    ...(semesterId ? { offering: { semesterId } } : {}),
+  };
+
+  return prisma.enrollment.findMany({
+    where,
+    include: {
+      student: {
+        include: { department: true },
+      },
+      offering: {
+        include: {
+          course: true,
+          semester: true,
+        },
+      },
+      examResults: {
+        include: {
+          exam: true,
+        },
+        orderBy: { exam: { examDate: "asc" } },
+      },
+    },
+    orderBy: [
+      { offering: { semester: { startDate: "asc" } } },
+      { offering: { course: { courseName: "asc" } } },
+    ],
+  });
+}

@@ -19,11 +19,15 @@ export async function getAdminDashboard() {
   }
 }
 
-export async function getMyStats() {
+export async function getMyStats(request: Request) {
   try {
     const authz = await getAuthorizationContext();
     authz.authorize("read", "Dashboard");
-    const stats = await statsService.getMyStats(authz.scope);
+    const url = new URL(request.url);
+    const semesterId = url.searchParams.get("semesterId")
+      ? Number(url.searchParams.get("semesterId"))
+      : undefined;
+    const stats = await statsService.getMyStats(authz.scope, semesterId);
     return NextResponse.json(stats);
   } catch (error) {
     return errorResponse(error);

@@ -22,6 +22,7 @@ import {
   Calendar,
   Bell,
   Megaphone,
+  ScrollText,
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
@@ -41,6 +42,7 @@ const allNavItems: NavItem[] = [
   { href: "/my-exams", label: "My Exams", icon: Calendar, subject: "MyExams", action: "read" },
   { href: "/schedule", label: "Schedule", icon: Calendar, subject: "MySchedule", action: "read" },
   { href: "/my-grades", label: "My Grades", icon: Trophy, subject: "MyGrades", action: "read" },
+  { href: "/transcript", label: "Transcript", icon: ScrollText, subject: "MyGrades", action: "read" },
   { href: "/notifications", label: "Notifications", icon: Bell, subject: "MyNotifications", action: "read" },
   { href: "/announcements", label: "Announcements", icon: Megaphone, subject: "Announcement", action: "read" },
   { href: "/students", label: "Students", icon: Users, subject: "Student", action: "read" },

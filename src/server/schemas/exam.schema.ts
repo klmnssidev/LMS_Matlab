@@ -16,6 +16,13 @@ export const ExamJoinedSchema = ExamSchema.extend({
   courseCode: z.string(),
 });
 
+export const ExamQuerySchema = z.object({
+  self: z.coerce.boolean().optional(),
+  offeringId: z.coerce.number().optional(),
+});
+
+export type ExamQuery = z.infer<typeof ExamQuerySchema>;
+
 export type Exam = z.infer<typeof ExamSchema>;
 export type CreateExam = z.infer<typeof CreateExamSchema>;
 export type ExamJoined = z.infer<typeof ExamJoinedSchema>;

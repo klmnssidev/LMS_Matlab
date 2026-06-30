@@ -8,8 +8,11 @@ async function fetchAdminStats() {
   return res.json();
 }
 
-async function fetchMyStats() {
-  const res = await fetch("/api/my-stats");
+async function fetchMyStats(semesterId?: number | null) {
+  const params = new URLSearchParams();
+  if (semesterId) params.set("semesterId", String(semesterId));
+  const qs = params.toString();
+  const res = await fetch(`/api/my-stats${qs ? `?${qs}` : ""}`);
   if (!res.ok) throw new Error("Failed to fetch stats");
   return res.json();
 }
@@ -27,10 +30,10 @@ export function useAdminStats() {
   });
 }
 
-export function useMyStats() {
+export function useMyStats(semesterId?: number | null) {
   return useQuery({
-    queryKey: ["my-stats"],
-    queryFn: fetchMyStats,
+    queryKey: ["my-stats", semesterId],
+    queryFn: () => fetchMyStats(semesterId),
   });
 }
 

@@ -30,6 +30,7 @@ export type StudentStats = {
   departmentName: string;
   currentSemester: string | null;
   recentGrades: RecentGrade[];
+  semesters: { semesterId: number; semesterName: string; academicYear: string }[];
 };
 
 export type TeacherStats = {
@@ -62,17 +63,22 @@ export async function getAdminStats(): Promise<DashboardStats> {
   };
 }
 
-export async function getStudentStats(studentId: number, studentDepartmentId: number): Promise<StudentStats> {
+export async function getStudentStats(
+  studentId: number,
+  studentDepartmentId: number,
+  semesterId?: number
+): Promise<StudentStats> {
   const department = await departmentRepo.findById(studentDepartmentId);
-  const [enrollments, upcomingExams, attendance, attendancePercentage, gpa, completedCredits, currentSemester, recentGrades] = await Promise.all([
+  const [enrollments, upcomingExams, attendance, attendancePercentage, gpa, completedCredits, currentSemester, recentGrades, semesters] = await Promise.all([
     statsRepo.getStudentEnrollmentAgg(studentId),
     statsRepo.getStudentUpcomingExams(studentId),
-    statsRepo.getStudentAttendanceSummary(studentId),
-    statsRepo.getStudentAttendancePercentage(studentId),
+    statsRepo.getStudentAttendanceSummary(studentId, semesterId),
+    statsRepo.getStudentAttendancePercentage(studentId, semesterId),
     statsRepo.getStudentGpa(studentId),
     statsRepo.getStudentCompletedCredits(studentId),
     statsRepo.getCurrentSemester(),
     statsRepo.getStudentRecentGrades(studentId),
+    statsRepo.getStudentSemesters(studentId),
   ]);
 
   return {
@@ -90,6 +96,7 @@ export async function getStudentStats(studentId: number, studentDepartmentId: nu
       score: g.score,
       max_score: g.max_score,
     })),
+    semesters,
   };
 }
 
@@ -119,7 +126,7 @@ export async function getTeacherStats(teacherId: number): Promise<TeacherStats> 
   };
 }
 
-export async function getMyStats(scope: AuthorizationScope) {
+export async function getMyStats(scope: AuthorizationScope, semesterId?: number) {
   if (scope.role === "Admin") {
     return getAdminStats();
   }
@@ -143,5 +150,5 @@ export async function getMyStats(scope: AuthorizationScope) {
     };
   }
 
-  return getStudentStats(scope.studentId, scope.departmentId);
+  return getStudentStats(scope.studentId, scope.departmentId, semesterId);
 }

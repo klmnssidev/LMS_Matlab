@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthorizationContext } from "@/permissions";
+import { getAuthorizationContext, ForbiddenError } from "@/permissions";
 import * as profileService from "@/server/services/profile.service";
 
 function errorResponse(error: unknown) {
@@ -14,7 +14,7 @@ export async function getMyProfile() {
     authz.authorize("read", "MyProfile");
 
     if (authz.scope.role !== "Student") {
-      return NextResponse.json({ error: "Only students can access their profile" }, { status: 403 });
+      throw new ForbiddenError("Forbidden");
     }
 
     const profile = await profileService.getMyProfile(authz.scope.studentId);

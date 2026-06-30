@@ -22,6 +22,16 @@ export const AttendanceJoinedSchema = AttendanceSchema.extend({
   courseName: z.string(),
 });
 
+export const AttendanceQuerySchema = z.object({
+  self: z.coerce.boolean().optional(),
+  semesterId: z.coerce.number().optional(),
+  offeringId: z.coerce.number().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+export type AttendanceQuery = z.infer<typeof AttendanceQuerySchema>;
+
 export type Attendance = z.infer<typeof AttendanceSchema>;
 export type CreateAttendance = z.infer<typeof CreateAttendanceSchema>;
 export type UpdateAttendance = z.infer<typeof UpdateAttendanceSchema>;

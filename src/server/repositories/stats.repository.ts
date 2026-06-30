@@ -33,22 +33,26 @@ export async function getStudentUpcomingExams(studentId: number): Promise<Upcomi
   `;
 }
 
-export async function getStudentAttendanceSummary(studentId: number): Promise<AttSummary[]> {
+export async function getStudentAttendanceSummary(studentId: number, semesterId?: number): Promise<AttSummary[]> {
   return prisma.$queryRaw<AttSummary[]>`
     SELECT a.status, COUNT(*)::int as count
     FROM attendance a
     JOIN enrollments e ON e.enrollment_id = a.enrollment_id AND e.student_id = ${studentId}
+    LEFT JOIN course_offerings o ON o.offering_id = e.offering_id
+    WHERE ${semesterId ?? null}::int IS NULL OR o.semester_id = ${semesterId ?? null}::int
     GROUP BY a.status
   `;
 }
 
-export async function getStudentAttendancePercentage(studentId: number): Promise<number> {
+export async function getStudentAttendancePercentage(studentId: number, semesterId?: number): Promise<number> {
   const rows = await prisma.$queryRaw<{ present: number; total: number }[]>`
     SELECT
       SUM(CASE WHEN a.status IN ('Present', 'Late') THEN 1 ELSE 0 END)::int as present,
       COUNT(*)::int as total
     FROM attendance a
     JOIN enrollments e ON e.enrollment_id = a.enrollment_id AND e.student_id = ${studentId}
+    LEFT JOIN course_offerings o ON o.offering_id = e.offering_id
+    WHERE ${semesterId ?? null}::int IS NULL OR o.semester_id = ${semesterId ?? null}::int
   `;
   const record = rows[0];
   if (!record || record.total === 0) return 0;
@@ -164,5 +168,18 @@ export async function getAdminGradeDistribution(): Promise<GradeDist[]> {
     FROM enrollments
     GROUP BY grade
     ORDER BY count DESC
+  `;
+}
+
+export type StudentSemester = { semesterId: number; semesterName: string; academicYear: string };
+
+export async function getStudentSemesters(studentId: number): Promise<StudentSemester[]> {
+  return prisma.$queryRaw<StudentSemester[]>`
+    SELECT DISTINCT sem.semester_id as "semesterId", sem.semester_name as "semesterName", sem.academic_year as "academicYear"
+    FROM enrollments e
+    JOIN course_offerings o ON o.offering_id = e.offering_id
+    JOIN semesters sem ON sem.semester_id = o.semester_id
+    WHERE e.student_id = ${studentId}
+    ORDER BY sem.start_date DESC
   `;
 }
