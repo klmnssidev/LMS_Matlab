@@ -18,6 +18,8 @@ import {
   Trophy,
   TableProperties,
   FileSpreadsheet,
+  User,
+  Calendar,
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
@@ -31,6 +33,11 @@ type NavItem = {
 
 const allNavItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, subject: "Dashboard", action: "read" },
+  { href: "/my-profile", label: "My Profile", icon: User, subject: "MyProfile", action: "read" },
+  { href: "/my-courses", label: "My Courses", icon: BookMarked, subject: "MyEnrollments", action: "read" },
+  { href: "/my-attendance", label: "My Attendance", icon: CalendarCheck, subject: "MyAttendance", action: "read" },
+  { href: "/my-exams", label: "My Exams", icon: Calendar, subject: "MyExams", action: "read" },
+  { href: "/my-grades", label: "My Grades", icon: Trophy, subject: "MyGrades", action: "read" },
   { href: "/students", label: "Students", icon: Users, subject: "Student", action: "read" },
   { href: "/teachers", label: "Teachers", icon: GraduationCap, subject: "Teacher", action: "read" },
   { href: "/courses", label: "Courses", icon: BookOpen, subject: "Course", action: "read" },
@@ -39,8 +46,6 @@ const allNavItems: NavItem[] = [
   { href: "/course-offerings", label: "Course Offerings", icon: TableProperties, subject: "CourseOffering", action: "read" },
   { href: "/exam-results", label: "Exam Results", icon: FileSpreadsheet, subject: "ExamResult", action: "read" },
   { href: "/posters", label: "Posters", icon: ImageIcon, subject: "Poster", action: "read" },
-  { href: "/my-courses", label: "My Courses", icon: BookMarked, subject: "MyEnrollments", action: "read" },
-  { href: "/my-grades", label: "My Grades", icon: Trophy, subject: "MyGrades", action: "read" },
 ];
 
 export function Sidebar() {
@@ -65,7 +70,7 @@ export function Sidebar() {
       <nav className="flex-1 p-3 flex flex-col gap-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href;
+          const active = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
@@ -77,9 +82,6 @@ export function Sidebar() {
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-sidebar-primary-foreground" />
-              )}
               <Icon className="size-4 shrink-0" />
               {item.label}
             </Link>

@@ -31,8 +31,9 @@ export async function findMany(filters: EnrollmentFilters, scope?: Authorization
       student: true,
       offering: {
         include: {
-          course: true,
+          course: { include: { department: true } },
           semester: true,
+          teacher: true,
         },
       },
     },
@@ -47,8 +48,9 @@ export async function findById(id: number, scope?: AuthorizationScope) {
       student: true,
       offering: {
         include: {
-          course: true,
+          course: { include: { department: true } },
           semester: true,
+          teacher: true,
         },
       },
     },

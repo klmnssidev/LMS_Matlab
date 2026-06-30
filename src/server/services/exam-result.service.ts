@@ -12,6 +12,7 @@ function toExamResultJoined(row: Awaited<ReturnType<typeof examResultRepo.findMa
     studentName: row.enrollment.student.studentName,
     examType: row.exam.examType,
     maxScore: Number(row.exam.maxScore),
+    courseName: row.enrollment.offering.course.courseName,
   };
 }
 

@@ -10,6 +10,9 @@ function applyScope(scope?: AuthorizationScope): Prisma.ExamWhereInput {
   if (scope?.role === "Teacher") {
     return { offering: { teacherId: scope.teacherId } };
   }
+  if (scope?.role === "Student") {
+    return { offering: { enrollments: { some: { studentId: scope.studentId } } } };
+  }
   return {};
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Trophy, CalendarCheck, GraduationCap } from "lucide-react";
+import { BookOpen, Trophy, CalendarCheck, GraduationCap, CheckCircle, Percent, Banknote, BookMarked } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,7 +46,7 @@ export function StudentDashboard() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">Welcome, {displayName}</h1>
-        <SkeletonStatCards count={4} />
+        <SkeletonStatCards count={9} />
       </div>
     );
   }
@@ -60,20 +60,52 @@ export function StudentDashboard() {
     );
   }
 
-  const { enrollments, upcomingExams, attendance } = stats as {
+  const {
+    enrollments,
+    upcomingExams,
+    attendance,
+    attendancePercentage,
+    gpa,
+    completedCredits,
+    departmentName,
+    currentSemester,
+    recentGrades,
+  } = stats as {
     enrollments: { total: number; active: number; completed: number };
     upcomingExams: { exam_id: number; exam_type: string; exam_date: string; course_name: string; course_code: string }[];
     attendance: { status: string; count: number }[];
+    attendancePercentage: number;
+    gpa: number | null;
+    completedCredits: number;
+    departmentName: string;
+    currentSemester: string | null;
+    recentGrades: { exam_type: string; course_name: string; score: number; max_score: number }[];
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Welcome, {displayName}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Welcome, {displayName}</h1>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {currentSemester && (
+            <Badge variant="secondary">{currentSemester}</Badge>
+          )}
+          <Badge variant="outline">{departmentName}</Badge>
+        </div>
+      </div>
+
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <StatCard icon={BookOpen} label="Enrolled Courses" value={enrollments.active} />
+        <StatCard icon={GraduationCap} label="Completed" value={enrollments.completed} />
+        <StatCard icon={Percent} label="Attendance" value={attendancePercentage > 0 ? `${attendancePercentage}%` : "—"} />
+        <StatCard icon={Trophy} label="GPA" value={gpa !== null ? gpa.toFixed(2) : "—"} />
+        <StatCard icon={CheckCircle} label="Completed Credits" value={completedCredits} />
+      </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={BookOpen} label="Enrolled" value={enrollments.active} />
-        <StatCard icon={GraduationCap} label="Completed" value={enrollments.completed} />
-        <StatCard icon={Trophy} label="Total Courses" value={enrollments.total} />
+        <StatCard icon={Banknote} label="Department" value={departmentName} />
+        <StatCard icon={BookMarked} label="Total Courses" value={enrollments.total} />
+        {currentSemester && <StatCard icon={CalendarCheck} label="Current Semester" value={currentSemester} />}
         <StatCard icon={CalendarCheck} label="Upcoming Exams" value={upcomingExams.length} />
       </div>
 
@@ -130,6 +162,40 @@ export function StudentDashboard() {
                         <Badge variant={attendanceBadge(a.status)}>{a.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium">{a.count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {recentGrades && recentGrades.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Grades</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Course</TableHead>
+                    <TableHead>Exam</TableHead>
+                    <TableHead>Score</TableHead>
+                    <TableHead>%</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentGrades.map((g, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium">{g.course_name}</TableCell>
+                      <TableCell className="capitalize">{g.exam_type}</TableCell>
+                      <TableCell>{g.score}/{g.max_score}</TableCell>
+                      <TableCell>
+                        <Badge variant={g.max_score > 0 && (g.score / g.max_score) >= 0.5 ? "default" : "destructive"}>
+                          {g.max_score > 0 ? `${Math.round((g.score / g.max_score) * 100)}%` : "—"}
+                        </Badge>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

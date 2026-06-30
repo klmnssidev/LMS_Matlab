@@ -19,6 +19,9 @@ function toEnrollmentJoined(row: Awaited<ReturnType<typeof enrollmentRepo.findMa
     courseCode: row.offering.course.courseCode,
     sectionName: row.offering.sectionName,
     semesterName: row.offering.semester.semesterName,
+    teacherName: row.offering.teacher.teacherName,
+    creditHours: row.offering.course.creditHours,
+    departmentName: row.offering.course.department.departmentName,
   };
 }
 

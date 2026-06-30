@@ -19,8 +19,11 @@ function zodErrorResponse(error: unknown) {
 export async function list(req: NextRequest) {
   try {
     const authz = await getAuthorizationContext();
-    authz.authorize("read", "Attendance");
     const { searchParams } = new URL(req.url);
+
+    const isSelf = searchParams.get("self") === "true";
+    authz.authorize("read", isSelf ? "MyAttendance" : "Attendance");
+
     const filters = {
       enrollmentId: searchParams.get("enrollment_id") ? Number(searchParams.get("enrollment_id")) : undefined,
       offeringId: searchParams.get("offering_id") ? Number(searchParams.get("offering_id")) : undefined,

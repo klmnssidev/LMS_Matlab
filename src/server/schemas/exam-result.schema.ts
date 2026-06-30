@@ -19,6 +19,7 @@ export const ExamResultJoinedSchema = ExamResultSchema.extend({
   studentName: z.string(),
   examType: z.string(),
   maxScore: z.number(),
+  courseName: z.string(),
 });
 
 export type ExamResult = z.infer<typeof ExamResultSchema>;

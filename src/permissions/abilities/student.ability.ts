@@ -5,7 +5,7 @@ export function defineStudentAbility(): AppAbility {
   const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
 
   can("read", ["Course", "Poster", "Announcement"]);
-  can("read", ["MyEnrollments", "MyGrades"]);
+  can("read", ["MyEnrollments", "MyGrades", "MyProfile", "MyAttendance", "MyExams"]);
   can("read", "Dashboard");
 
   return build();

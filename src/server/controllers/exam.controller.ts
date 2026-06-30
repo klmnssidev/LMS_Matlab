@@ -11,8 +11,11 @@ function errorResponse(error: unknown) {
 export async function list(req: NextRequest) {
   try {
     const authz = await getAuthorizationContext();
-    authz.authorize("read", "Exam");
     const { searchParams } = new URL(req.url);
+
+    const isSelf = searchParams.get("self") === "true";
+    authz.authorize("read", isSelf ? "MyExams" : "Exam");
+
     const filters = {
       offeringId: searchParams.get("offering_id") ? Number(searchParams.get("offering_id")) : undefined,
     };

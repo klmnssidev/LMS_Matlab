@@ -62,18 +62,21 @@ export function MyCourses() {
           <Card key={e.enrollmentId} className="group transition-shadow hover:shadow-md">
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-xs font-mono text-muted-foreground">{e.courseCode}</p>
-                  <CardTitle className="text-base group-hover:text-primary transition-colors">
+                  <CardTitle className="text-base group-hover:text-primary transition-colors truncate">
                     {e.courseName}
                   </CardTitle>
                 </div>
                 <Badge variant={badgeVariant(e.status)}>{e.status}</Badge>
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
+            <CardContent className="flex flex-col gap-1.5 text-sm text-muted-foreground">
               <p>Section: {e.sectionName}</p>
               <p>Semester: {e.semesterName}</p>
+              <p>Teacher: {e.teacherName}</p>
+              <p>Credits: {e.creditHours}</p>
+              <p>Department: {e.departmentName}</p>
               {e.finalGrade && <p>Grade: <span className="font-semibold text-foreground">{e.finalGrade}</span></p>}
             </CardContent>
           </Card>

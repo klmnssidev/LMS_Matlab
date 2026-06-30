@@ -31,7 +31,7 @@ export async function findMany(filters: ExamResultFilters, scope?: Authorization
     },
     include: {
       exam: true,
-      enrollment: { include: { student: true } },
+      enrollment: { include: { student: true, offering: { include: { course: true } } } },
     },
     orderBy: { resultId: "desc" },
   });
@@ -42,7 +42,7 @@ export async function findById(id: number, scope?: AuthorizationScope) {
     where: { resultId: id, ...applyScope(scope) },
     include: {
       exam: true,
-      enrollment: { include: { student: true } },
+      enrollment: { include: { student: true, offering: { include: { course: true } } } },
     },
   });
 }

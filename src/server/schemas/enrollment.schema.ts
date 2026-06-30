@@ -25,6 +25,9 @@ export const EnrollmentJoinedSchema = EnrollmentSchema.extend({
   courseCode: z.string(),
   sectionName: z.string(),
   semesterName: z.string(),
+  teacherName: z.string(),
+  creditHours: z.number(),
+  departmentName: z.string(),
 });
 
 export type Enrollment = z.infer<typeof EnrollmentSchema>;
