@@ -56,13 +56,13 @@ async function getAttendanceStats(studentId: number, semesterId?: number): Promi
   return { attendance: raw, attendancePercentage: percentage };
 }
 
-async function getGpaStats(studentId: number): Promise<number | null> {
-  const raw = await statsRepo.getStudentRawGrades(studentId);
+async function getGpaStats(studentId: number, semesterId?: number): Promise<number | null> {
+  const raw = await statsRepo.getStudentRawGrades(studentId, semesterId);
   return calculateGpa(raw.map((r) => ({ finalGrade: r.final_grade, creditHours: r.credit_hours })));
 }
 
-async function getCreditsStats(studentId: number): Promise<number> {
-  const raw = await statsRepo.getStudentCreditEnrollments(studentId);
+async function getCreditsStats(studentId: number, semesterId?: number): Promise<number> {
+  const raw = await statsRepo.getStudentCreditEnrollments(studentId, semesterId);
   return calculateCompletedCredits(raw.map((r) => ({ status: r.status, creditHours: r.credit_hours })));
 }
 
@@ -122,8 +122,8 @@ export async function getStudentStats(
     getEnrollmentStats(studentId),
     getUpcomingExams(studentId),
     getAttendanceStats(studentId, semesterId),
-    getGpaStats(studentId),
-    getCreditsStats(studentId),
+    getGpaStats(studentId, semesterId),
+    getCreditsStats(studentId, semesterId),
     getDepartmentInfo(studentDepartmentId),
     getCurrentSemester(),
     getRecentGrades(studentId),

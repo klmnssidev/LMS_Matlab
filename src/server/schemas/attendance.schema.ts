@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateString } from "@/lib/zod-utils";
 
 export const AttendanceSchema = z.object({
   attendanceId: z.number(),
@@ -26,8 +27,8 @@ export const AttendanceQuerySchema = z.object({
   self: z.coerce.boolean().optional(),
   semesterId: z.coerce.number().optional(),
   offeringId: z.coerce.number().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
+  startDate: dateString().optional(),
+  endDate: dateString().optional(),
 });
 
 export type AttendanceQuery = z.infer<typeof AttendanceQuerySchema>;

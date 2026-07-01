@@ -37,12 +37,9 @@ export async function getTranscript(
   studentId: number,
   semesterId?: number
 ): Promise<TranscriptDTO> {
-  const enrollments = await enrollmentRepo.findTranscriptEnrollments(
-    studentId,
-    semesterId
-  );
+  const allEnrollments = await enrollmentRepo.findTranscriptEnrollments(studentId);
 
-  if (enrollments.length === 0) {
+  if (allEnrollments.length === 0) {
     return {
       studentName: "",
       departmentName: "",
@@ -53,11 +50,15 @@ export async function getTranscript(
     };
   }
 
-  const first = enrollments[0];
+  const first = allEnrollments[0];
   const student = first.student;
   const studentName = student.studentName;
   const departmentName = student.department.departmentName;
   const studentNumber = student.studentNumber;
+
+  const viewEnrollments = semesterId
+    ? allEnrollments.filter((e) => e.offering.semester.semesterId === semesterId)
+    : allEnrollments;
 
   const semesterMap = new Map<
     number,
@@ -68,7 +69,7 @@ export async function getTranscript(
     }
   >();
 
-  for (const e of enrollments) {
+  for (const e of viewEnrollments) {
     const sem = e.offering.semester;
     const existing = semesterMap.get(sem.semesterId);
     if (existing) {
@@ -82,48 +83,46 @@ export async function getTranscript(
     }
   }
 
-  const semesters = Array.from(semesterMap.entries())
-    .sort(([, a], [, b]) => a.semesterName.localeCompare(b.semesterName))
-    .map(([semId, entry]) => {
-      const gpaItems = entry.enrollments.map((e) => ({
+  const semesters = Array.from(semesterMap.entries()).map(([semId, entry]) => {
+    const gpaItems = entry.enrollments.map((e) => ({
+      finalGrade: e.finalGrade,
+      creditHours: e.offering.course.creditHours,
+    }));
+    const gpa = calculateGpa(gpaItems);
+    const totalCredits = entry.enrollments.reduce(
+      (sum, e) => sum + e.offering.course.creditHours,
+      0
+    );
+    const creditItems = entry.enrollments.map((e) => ({
+      status: e.status,
+      creditHours: e.offering.course.creditHours,
+    }));
+    const earnedCredits = calculateCompletedCredits(creditItems);
+
+    return {
+      semesterId: semId,
+      semesterName: entry.semesterName,
+      academicYear: entry.academicYear,
+      gpa,
+      totalCredits,
+      earnedCredits,
+      enrollments: entry.enrollments.map((e) => ({
+        enrollmentId: e.enrollmentId,
+        courseCode: e.offering.course.courseCode,
+        courseName: e.offering.course.courseName,
+        creditHours: e.offering.course.creditHours,
         finalGrade: e.finalGrade,
-        creditHours: e.offering.course.creditHours,
-      }));
-      const gpa = calculateGpa(gpaItems);
-      const totalCredits = entry.enrollments.reduce(
-        (sum, e) => sum + e.offering.course.creditHours,
-        0
-      );
-      const creditItems = entry.enrollments.map((e) => ({
-        status: e.status,
-        creditHours: e.offering.course.creditHours,
-      }));
-      const earnedCredits = calculateCompletedCredits(creditItems);
-
-      return {
-        semesterId: semId,
-        semesterName: entry.semesterName,
-        academicYear: entry.academicYear,
-        gpa,
-        totalCredits,
-        earnedCredits,
-        enrollments: entry.enrollments.map((e) => ({
-          enrollmentId: e.enrollmentId,
-          courseCode: e.offering.course.courseCode,
-          courseName: e.offering.course.courseName,
-          creditHours: e.offering.course.creditHours,
-          finalGrade: e.finalGrade,
-          letterGrade: e.finalGrade ?? null,
-          examResults: e.examResults.map((er) => ({
-            examType: er.exam.examType,
-            score: Number(er.score),
-            maxScore: Number(er.exam.maxScore),
-          })),
+        letterGrade: e.finalGrade ?? null,
+        examResults: e.examResults.map((er) => ({
+          examType: er.exam.examType,
+          score: Number(er.score),
+          maxScore: Number(er.exam.maxScore),
         })),
-      };
-    });
+      })),
+    };
+  });
 
-  const allGradedItems = enrollments
+  const allGradedItems = allEnrollments
     .filter((e) => e.finalGrade != null && e.finalGrade !== "")
     .map((e) => ({
       finalGrade: e.finalGrade,
@@ -131,7 +130,7 @@ export async function getTranscript(
     }));
   const cumulativeGpa = calculateGpa(allGradedItems);
 
-  const allCreditItems = enrollments.map((e) => ({
+  const allCreditItems = allEnrollments.map((e) => ({
     status: e.status,
     creditHours: e.offering.course.creditHours,
   }));

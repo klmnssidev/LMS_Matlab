@@ -35,7 +35,7 @@ export function Transcript() {
   const { data: transcript, isLoading, error } = useTranscript();
 
   const filteredSemesters = transcript?.semesters.filter(
-    (s) => selectedSemester === "all" || s.semesterName === selectedSemester
+    (s) => selectedSemester === "all" || String(s.semesterId) === selectedSemester
   ) ?? [];
 
   if (isLoading) {
@@ -74,7 +74,10 @@ export function Transcript() {
     );
   }
 
-  const uniqueSemesterNames = [...new Set(transcript.semesters.map((s) => s.semesterName))];
+  const semesterOptions = transcript.semesters.map((s) => ({
+    value: String(s.semesterId),
+    label: `${s.semesterName} (${s.academicYear})`,
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -90,9 +93,9 @@ export function Transcript() {
           <SelectContent>
             <SelectGroup>
               <SelectItem value="all">All Semesters</SelectItem>
-              {uniqueSemesterNames.map((name) => (
-                <SelectItem key={name} value={name}>
-                  {name}
+              {semesterOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectGroup>

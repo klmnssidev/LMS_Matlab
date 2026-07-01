@@ -39,7 +39,7 @@ export function buildAttendanceWhere(
   if (filters.offeringId) {
     where.enrollment = { ...(where.enrollment as object), offeringId: filters.offeringId };
   }
-  if (filters.studentId) {
+  if (filters.studentId && scope?.role !== "Student") {
     where.enrollment = { ...(where.enrollment as object), studentId: filters.studentId };
   }
 

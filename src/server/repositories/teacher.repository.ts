@@ -18,7 +18,7 @@ export async function findMany(filters: TeacherFilters, scope?: AuthorizationSco
 
 export async function findById(id: number, scope?: AuthorizationScope) {
   return prisma.teacher.findFirst({
-    where: { teacherId: id, ...buildTeacherWhere({}, scope) },
+    where: { ...buildTeacherWhere({}, scope), teacherId: id },
     include: teacherInclude,
   });
 }

@@ -52,25 +52,35 @@ export async function getStudentAttendanceSummary(studentId: number, semesterId?
 
 export type RawGrade = { final_grade: string | null; credit_hours: number };
 
-export async function getStudentRawGrades(studentId: number): Promise<RawGrade[]> {
+export async function getStudentRawGrades(studentId: number, semesterId?: number): Promise<RawGrade[]> {
+  const semesterFilter = semesterId
+    ? Prisma.sql`AND o.semester_id = ${semesterId}`
+    : Prisma.empty;
+
   return prisma.$queryRaw<RawGrade[]>`
     SELECT e.final_grade, co.credit_hours
     FROM enrollments e
     JOIN course_offerings o ON o.offering_id = e.offering_id
     JOIN courses co ON co.course_id = o.course_id
     WHERE e.student_id = ${studentId} AND e.final_grade IS NOT NULL AND e.final_grade != ''
+    ${semesterFilter}
   `;
 }
 
 export type RawCreditEnrollment = { status: string; credit_hours: number };
 
-export async function getStudentCreditEnrollments(studentId: number): Promise<RawCreditEnrollment[]> {
+export async function getStudentCreditEnrollments(studentId: number, semesterId?: number): Promise<RawCreditEnrollment[]> {
+  const semesterFilter = semesterId
+    ? Prisma.sql`AND o.semester_id = ${semesterId}`
+    : Prisma.empty;
+
   return prisma.$queryRaw<RawCreditEnrollment[]>`
     SELECT e.status, co.credit_hours
     FROM enrollments e
     JOIN course_offerings o ON o.offering_id = e.offering_id
     JOIN courses co ON co.course_id = o.course_id
     WHERE e.student_id = ${studentId}
+    ${semesterFilter}
   `;
 }
 

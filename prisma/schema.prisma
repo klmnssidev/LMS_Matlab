@@ -211,9 +211,4 @@ model Poster {
   @@map("posters")
 }
 
-// TODO: Manual database cleanup required.
-// The notification and announcement tables were previously created via `db push`.
-// Run `npx prisma db push` to drop the `notifications` and `announcements` tables,
-// or run the following SQL manually:
-//   DROP TABLE IF EXISTS notifications;
-//   DROP TABLE IF EXISTS announcements;
+

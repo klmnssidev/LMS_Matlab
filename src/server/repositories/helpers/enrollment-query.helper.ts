@@ -30,7 +30,7 @@ export function buildEnrollmentWhere(
     where.studentId = scope.studentId;
   }
 
-  if (filters.studentId) where.studentId = filters.studentId;
+  if (filters.studentId && scope?.role !== "Student") where.studentId = filters.studentId;
   if (filters.offeringId) where.offeringId = filters.offeringId;
   if (filters.status) where.status = filters.status;
 

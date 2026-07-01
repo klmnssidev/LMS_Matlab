@@ -27,7 +27,7 @@ export function buildOfferingWhere(
   }
 
   if (filters.courseId) where.courseId = filters.courseId;
-  if (filters.teacherId) where.teacherId = filters.teacherId;
+  if (filters.teacherId && scope?.role !== "Teacher") where.teacherId = filters.teacherId;
   if (filters.semesterId) where.semesterId = filters.semesterId;
 
   return where;

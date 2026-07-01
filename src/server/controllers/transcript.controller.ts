@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { getAuthorizationContext } from "@/permissions";
 import * as transcriptService from "@/server/services/transcript.service";
 import { TranscriptQuerySchema } from "@/server/schemas/transcript.schema";
 
 function errorResponse(error: unknown) {
+  if (error instanceof ZodError) {
+    return NextResponse.json({ error: "Invalid query parameters" }, { status: 400 });
+  }
   const message = error instanceof Error ? error.message : "Internal server error";
   const status = message.includes("Forbidden") ? 403 : 500;
   return NextResponse.json({ error: message }, { status });

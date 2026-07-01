@@ -26,7 +26,7 @@ export function buildExamResultWhere(
 
   if (filters.examId) where.examId = filters.examId;
   if (filters.enrollmentId) where.enrollmentId = filters.enrollmentId;
-  if (filters.studentId) {
+  if (filters.studentId && scope?.role !== "Student") {
     where.enrollment = { ...(where.enrollment as object), studentId: filters.studentId };
   }
 
