@@ -15,14 +15,12 @@ export const Subjects = [
   "Dashboard",
   "Analytics",
   "Settings",
-  "Announcement",
   "MyEnrollments",
   "MyGrades",
   "MyProfile",
   "MyAttendance",
   "MyExams",
   "MySchedule",
-  "MyNotifications",
 ] as const;
 
 export type Subject = (typeof Subjects)[number];

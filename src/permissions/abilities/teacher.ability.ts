@@ -16,7 +16,7 @@ export function defineTeacherAbility(): AppAbility {
   can(["create", "update"], ["Attendance", "Exam", "ExamResult"]);
   can(["delete"], ["Exam", "ExamResult"]);
 
-  can("read", ["Course", "Department", "Semester", "Classroom", "Poster", "Announcement"]);
+  can("read", ["Course", "Department", "Semester", "Classroom", "Poster"]);
   can("read", ["Dashboard", "Analytics"]);
 
   return build();

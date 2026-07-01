@@ -1,33 +1,15 @@
 import { prisma } from "@/server/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import type { AuthorizationScope } from "@/permissions";
+import { courseInclude, courseDetailInclude, buildCourseWhere } from "@/server/repositories/helpers/course-query.helper";
+import type { CourseFilters } from "@/server/repositories/helpers/course-query.helper";
 
-export type CourseFilters = {
-  search?: string;
-  limit?: number;
-  offset?: number;
-};
-
-function applyScope(scope?: AuthorizationScope): Prisma.CourseWhereInput {
-  if (scope?.role === "Student") {
-    return { departmentId: scope.departmentId };
-  }
-  return {};
-}
+export type { CourseFilters };
 
 export async function findMany(filters: CourseFilters, scope?: AuthorizationScope) {
-  const where: Prisma.CourseWhereInput = { ...applyScope(scope) };
-
-  if (filters.search) {
-    where.OR = [
-      { courseName: { contains: filters.search, mode: "insensitive" } },
-      { courseCode: { contains: filters.search, mode: "insensitive" } },
-    ];
-  }
-
   return prisma.course.findMany({
-    where,
-    include: { department: true },
+    where: buildCourseWhere(filters, scope),
+    include: courseInclude,
     orderBy: { courseName: "asc" },
     skip: filters.offset ?? 0,
     take: filters.limit ?? 50,
@@ -36,17 +18,8 @@ export async function findMany(filters: CourseFilters, scope?: AuthorizationScop
 
 export async function findById(id: number, scope?: AuthorizationScope) {
   return prisma.course.findFirst({
-    where: { courseId: id, ...applyScope(scope) },
-    include: {
-      department: true,
-      courseOfferings: {
-        include: {
-          teacher: true,
-          semester: true,
-          classroom: true,
-        },
-      },
-    },
+    where: { courseId: id, ...buildCourseWhere({}, scope) },
+    include: courseDetailInclude,
   });
 }
 
@@ -63,14 +36,5 @@ export async function remove(id: number) {
 }
 
 export async function count(filters: Omit<CourseFilters, "limit" | "offset">, scope?: AuthorizationScope) {
-  const where: Prisma.CourseWhereInput = { ...applyScope(scope) };
-
-  if (filters.search) {
-    where.OR = [
-      { courseName: { contains: filters.search, mode: "insensitive" } },
-      { courseCode: { contains: filters.search, mode: "insensitive" } },
-    ];
-  }
-
-  return prisma.course.count({ where });
+  return prisma.course.count({ where: buildCourseWhere(filters, scope) });
 }

@@ -23,8 +23,6 @@ model UserAccount {
 
   student      Student?       @relation(fields: [studentId], references: [studentId])
   teacher      Teacher?       @relation(fields: [teacherId], references: [teacherId])
-  notifications Notification[]
-
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -49,7 +47,6 @@ model Department {
   courses       Course[]
   students      Student[]
   teachers      Teacher[]
-  announcements Announcement[]
 
   @@map("departments")
 }
@@ -214,30 +211,4 @@ model Poster {
   @@map("posters")
 }
 
-model Announcement {
-  announcementId Int      @id @default(autoincrement()) @map("announcement_id")
-  title          String   @map("title") @db.VarChar(200)
-  content        String   @map("content") @db.Text
-  departmentId   Int?     @map("department_id")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  department Department? @relation(fields: [departmentId], references: [departmentId])
-
-  @@map("announcements")
-}
-
-model Notification {
-  notificationId Int      @id @default(autoincrement()) @map("notification_id")
-  userAccountId  Int      @map("user_account_id")
-  type           String   @map("type") @db.VarChar(50)
-  title          String   @map("title") @db.VarChar(200)
-  message        String?  @map("message") @db.Text
-  link           String?  @map("link") @db.VarChar(255)
-  isRead         Boolean  @default(false) @map("is_read")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  userAccount UserAccount @relation(fields: [userAccountId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}

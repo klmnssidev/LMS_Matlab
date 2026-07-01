@@ -1,4 +1,5 @@
 import { prisma } from "@/server/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 type EnrollAgg = { total: number; active: number; completed: number };
 type UpcomingExam = { exam_id: number; exam_type: string; exam_date: string; course_name: string; course_code: string };
@@ -33,61 +34,54 @@ export async function getStudentUpcomingExams(studentId: number): Promise<Upcomi
   `;
 }
 
-export async function getStudentAttendanceSummary(studentId: number): Promise<AttSummary[]> {
+export async function getStudentAttendanceSummary(studentId: number, semesterId?: number): Promise<AttSummary[]> {
+  const semesterFilter = semesterId
+    ? Prisma.sql`AND o.semester_id = ${semesterId}`
+    : Prisma.empty;
+
   return prisma.$queryRaw<AttSummary[]>`
     SELECT a.status, COUNT(*)::int as count
     FROM attendance a
     JOIN enrollments e ON e.enrollment_id = a.enrollment_id AND e.student_id = ${studentId}
+    LEFT JOIN course_offerings o ON o.offering_id = e.offering_id
+    WHERE 1=1
+    ${semesterFilter}
     GROUP BY a.status
   `;
 }
 
-export async function getStudentAttendancePercentage(studentId: number): Promise<number> {
-  const rows = await prisma.$queryRaw<{ present: number; total: number }[]>`
-    SELECT
-      SUM(CASE WHEN a.status IN ('Present', 'Late') THEN 1 ELSE 0 END)::int as present,
-      COUNT(*)::int as total
-    FROM attendance a
-    JOIN enrollments e ON e.enrollment_id = a.enrollment_id AND e.student_id = ${studentId}
-  `;
-  const record = rows[0];
-  if (!record || record.total === 0) return 0;
-  return Math.round((record.present / record.total) * 100);
-}
+export type RawGrade = { final_grade: string | null; credit_hours: number };
 
-export async function getStudentGpa(studentId: number): Promise<number | null> {
-  const rows = await prisma.$queryRaw<{ grade_point: number; credit_hours: number }[]>`
-    SELECT
-      CASE e.final_grade
-        WHEN 'A' THEN 4.0
-        WHEN 'B' THEN 3.0
-        WHEN 'C' THEN 2.0
-        WHEN 'D' THEN 1.0
-        WHEN 'F' THEN 0.0
-        ELSE NULL
-      END as grade_point,
-      co.credit_hours
+export async function getStudentRawGrades(studentId: number, semesterId?: number): Promise<RawGrade[]> {
+  const semesterFilter = semesterId
+    ? Prisma.sql`AND o.semester_id = ${semesterId}`
+    : Prisma.empty;
+
+  return prisma.$queryRaw<RawGrade[]>`
+    SELECT e.final_grade, co.credit_hours
     FROM enrollments e
     JOIN course_offerings o ON o.offering_id = e.offering_id
     JOIN courses co ON co.course_id = o.course_id
     WHERE e.student_id = ${studentId} AND e.final_grade IS NOT NULL AND e.final_grade != ''
+    ${semesterFilter}
   `;
-  if (rows.length === 0) return null;
-  const totalPoints = rows.reduce((sum, r) => sum + r.grade_point * r.credit_hours, 0);
-  const totalCredits = rows.reduce((sum, r) => sum + r.credit_hours, 0);
-  if (totalCredits === 0) return null;
-  return Math.round((totalPoints / totalCredits) * 100) / 100;
 }
 
-export async function getStudentCompletedCredits(studentId: number): Promise<number> {
-  const rows = await prisma.$queryRaw<{ credits: number }[]>`
-    SELECT COALESCE(SUM(co.credit_hours), 0)::int as credits
+export type RawCreditEnrollment = { status: string; credit_hours: number };
+
+export async function getStudentCreditEnrollments(studentId: number, semesterId?: number): Promise<RawCreditEnrollment[]> {
+  const semesterFilter = semesterId
+    ? Prisma.sql`AND o.semester_id = ${semesterId}`
+    : Prisma.empty;
+
+  return prisma.$queryRaw<RawCreditEnrollment[]>`
+    SELECT e.status, co.credit_hours
     FROM enrollments e
     JOIN course_offerings o ON o.offering_id = e.offering_id
     JOIN courses co ON co.course_id = o.course_id
-    WHERE e.student_id = ${studentId} AND e.status = 'Completed'
+    WHERE e.student_id = ${studentId}
+    ${semesterFilter}
   `;
-  return rows[0]?.credits ?? 0;
 }
 
 export async function getCurrentSemester(): Promise<string | null> {
@@ -164,5 +158,18 @@ export async function getAdminGradeDistribution(): Promise<GradeDist[]> {
     FROM enrollments
     GROUP BY grade
     ORDER BY count DESC
+  `;
+}
+
+export type StudentSemester = { semesterId: number; semesterName: string; academicYear: string };
+
+export async function getStudentSemesters(studentId: number): Promise<StudentSemester[]> {
+  return prisma.$queryRaw<StudentSemester[]>`
+    SELECT DISTINCT sem.semester_id as "semesterId", sem.semester_name as "semesterName", sem.academic_year as "academicYear"
+    FROM enrollments e
+    JOIN course_offerings o ON o.offering_id = e.offering_id
+    JOIN semesters sem ON sem.semester_id = o.semester_id
+    WHERE e.student_id = ${studentId}
+    ORDER BY sem.semester_id DESC
   `;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { BookOpen, Trophy, CalendarCheck, GraduationCap, CheckCircle, Percent, Banknote, BookMarked } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectItem,
+  SelectTrigger,
+  SelectContent,
+  SelectGroup,
+  SelectValue,
+} from "@/components/ui/select";
 import { SkeletonStatCards } from "@/components/loading-skeletons";
 import { useMyStats, useMe } from "@/features/dashboard/hooks";
 
@@ -38,8 +47,9 @@ function attendanceBadge(status: string) {
 }
 
 export function StudentDashboard() {
+  const [semesterId, setSemesterId] = useState<number | null>(null);
   const { data: profile } = useMe();
-  const { data: stats, isLoading, error } = useMyStats();
+  const { data: stats, isLoading, error } = useMyStats(semesterId);
   const displayName = (profile as { studentName?: string } | undefined)?.studentName || "Student";
 
   if (isLoading) {
@@ -70,6 +80,7 @@ export function StudentDashboard() {
     departmentName,
     currentSemester,
     recentGrades,
+    semesters = [],
   } = stats as {
     enrollments: { total: number; active: number; completed: number };
     upcomingExams: { exam_id: number; exam_type: string; exam_date: string; course_name: string; course_code: string }[];
@@ -80,6 +91,7 @@ export function StudentDashboard() {
     departmentName: string;
     currentSemester: string | null;
     recentGrades: { exam_type: string; course_name: string; score: number; max_score: number }[];
+    semesters?: { semesterId: number; semesterName: string; academicYear: string }[];
   };
 
   return (
@@ -142,12 +154,37 @@ export function StudentDashboard() {
           </Card>
         )}
 
-        {attendance.length > 0 && (
-          <Card>
-            <CardHeader>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <CardTitle>Attendance Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
+              {semesters.length > 1 && (
+                <Select
+                  value={semesterId ? String(semesterId) : "all"}
+                  onValueChange={(val) => setSemesterId(val === "all" || val === null ? null : Number(val))}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="all">All Semesters</SelectItem>
+                      {semesters.map((s) => (
+                        <SelectItem key={s.semesterId} value={String(s.semesterId)}>
+                          {s.semesterName} ({s.academicYear})
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {attendance.length === 0 && (
+              <p className="text-sm text-muted-foreground">No attendance records for this period.</p>
+            )}
+            {attendance.length > 0 && (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -166,9 +203,9 @@ export function StudentDashboard() {
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
 
         {recentGrades && recentGrades.length > 0 && (
           <Card>

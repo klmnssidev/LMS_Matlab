@@ -19,11 +19,17 @@ export async function getAdminDashboard() {
   }
 }
 
-export async function getMyStats() {
+export async function getMyStats(request: Request) {
   try {
     const authz = await getAuthorizationContext();
     authz.authorize("read", "Dashboard");
-    const stats = await statsService.getMyStats(authz.scope);
+    const url = new URL(request.url);
+    const raw = url.searchParams.get("semesterId");
+    if (raw && !Number.isFinite(Number(raw))) {
+      return NextResponse.json({ error: "Invalid semesterId" }, { status: 400 });
+    }
+    const semesterId = raw ? Number(raw) : undefined;
+    const stats = await statsService.getMyStats(authz.scope, semesterId);
     return NextResponse.json(stats);
   } catch (error) {
     return errorResponse(error);

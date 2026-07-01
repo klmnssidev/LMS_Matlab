@@ -4,19 +4,31 @@ import { useQuery } from "@tanstack/react-query";
 
 async function fetchAdminStats() {
   const res = await fetch("/api/stats");
-  if (!res.ok) throw new Error("Failed to fetch stats");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Failed to fetch stats (${res.status})`);
+  }
   return res.json();
 }
 
-async function fetchMyStats() {
-  const res = await fetch("/api/my-stats");
-  if (!res.ok) throw new Error("Failed to fetch stats");
+async function fetchMyStats(semesterId?: number | null) {
+  const params = new URLSearchParams();
+  if (semesterId) params.set("semesterId", String(semesterId));
+  const qs = params.toString();
+  const res = await fetch(`/api/my-stats${qs ? `?${qs}` : ""}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Failed to fetch stats (${res.status})`);
+  }
   return res.json();
 }
 
 async function fetchMe() {
   const res = await fetch("/api/me");
-  if (!res.ok) throw new Error("Failed to fetch profile");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Failed to fetch profile (${res.status})`);
+  }
   return res.json();
 }
 
@@ -27,10 +39,10 @@ export function useAdminStats() {
   });
 }
 
-export function useMyStats() {
+export function useMyStats(semesterId?: number | null) {
   return useQuery({
-    queryKey: ["my-stats"],
-    queryFn: fetchMyStats,
+    queryKey: ["my-stats", semesterId],
+    queryFn: () => fetchMyStats(semesterId),
   });
 }
 
