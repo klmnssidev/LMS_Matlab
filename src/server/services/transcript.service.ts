@@ -1,40 +1,15 @@
 import * as enrollmentRepo from "@/server/repositories/enrollment.repository";
+import { calculateGpa } from "@/server/lib/academic/gpa";
+import { calculateCompletedCredits } from "@/server/lib/academic/credits";
 
 type TranscriptEnrollmentRaw = Awaited<ReturnType<typeof enrollmentRepo.findTranscriptEnrollments>>[number];
-
-const GRADE_POINTS: Record<string, number> = {
-  A: 4.0,
-  B: 3.0,
-  C: 2.0,
-  D: 1.0,
-  F: 0.0,
-};
-
-function calcGpaFromEnrollments(
-  enrollments: TranscriptEnrollmentRaw[]
-): number | null {
-  let totalPoints = 0;
-  let totalCredits = 0;
-
-  for (const e of enrollments) {
-    const grade = e.finalGrade;
-    const credits = e.offering.course.creditHours;
-    const gradePoint = grade ? GRADE_POINTS[grade] : undefined;
-    if (gradePoint !== undefined && credits > 0) {
-      totalPoints += gradePoint * credits;
-      totalCredits += credits;
-    }
-  }
-
-  if (totalCredits === 0) return null;
-  return Math.round((totalPoints / totalCredits) * 100) / 100;
-}
 
 export type TranscriptDTO = {
   studentName: string;
   departmentName: string;
   studentNumber: string | null;
   semesters: {
+    semesterId: number;
     semesterName: string;
     academicYear: string;
     gpa: number | null;
@@ -109,17 +84,24 @@ export async function getTranscript(
 
   const semesters = Array.from(semesterMap.entries())
     .sort(([, a], [, b]) => a.semesterName.localeCompare(b.semesterName))
-    .map(([, entry]) => {
-      const gpa = calcGpaFromEnrollments(entry.enrollments);
+    .map(([semId, entry]) => {
+      const gpaItems = entry.enrollments.map((e) => ({
+        finalGrade: e.finalGrade,
+        creditHours: e.offering.course.creditHours,
+      }));
+      const gpa = calculateGpa(gpaItems);
       const totalCredits = entry.enrollments.reduce(
         (sum, e) => sum + e.offering.course.creditHours,
         0
       );
-      const earnedCredits = entry.enrollments
-        .filter((e) => e.status === "Completed")
-        .reduce((sum, e) => sum + e.offering.course.creditHours, 0);
+      const creditItems = entry.enrollments.map((e) => ({
+        status: e.status,
+        creditHours: e.offering.course.creditHours,
+      }));
+      const earnedCredits = calculateCompletedCredits(creditItems);
 
       return {
+        semesterId: semId,
         semesterName: entry.semesterName,
         academicYear: entry.academicYear,
         gpa,
@@ -141,11 +123,19 @@ export async function getTranscript(
       };
     });
 
-  const allGraded = enrollments.filter((e) => e.finalGrade != null && e.finalGrade !== "");
-  const cumulativeGpa = calcGpaFromEnrollments(allGraded);
-  const totalCompletedCredits = enrollments
-    .filter((e) => e.status === "Completed")
-    .reduce((sum, e) => sum + e.offering.course.creditHours, 0);
+  const allGradedItems = enrollments
+    .filter((e) => e.finalGrade != null && e.finalGrade !== "")
+    .map((e) => ({
+      finalGrade: e.finalGrade,
+      creditHours: e.offering.course.creditHours,
+    }));
+  const cumulativeGpa = calculateGpa(allGradedItems);
+
+  const allCreditItems = enrollments.map((e) => ({
+    status: e.status,
+    creditHours: e.offering.course.creditHours,
+  }));
+  const totalCompletedCredits = calculateCompletedCredits(allCreditItems);
 
   return {
     studentName,

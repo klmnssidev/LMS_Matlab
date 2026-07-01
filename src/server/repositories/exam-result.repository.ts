@@ -1,49 +1,23 @@
 import { prisma } from "@/server/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import type { AuthorizationScope } from "@/permissions";
+import { examResultInclude, buildExamResultWhere } from "@/server/repositories/helpers/exam-result-query.helper";
+import type { ExamResultFilters } from "@/server/repositories/helpers/exam-result-query.helper";
 
-export type ExamResultFilters = {
-  examId?: number;
-  enrollmentId?: number;
-  studentId?: number;
-};
-
-function applyScope(scope?: AuthorizationScope): Prisma.ExamResultWhereInput {
-  if (scope?.role === "Teacher") {
-    return { exam: { offering: { teacherId: scope.teacherId } } };
-  }
-  if (scope?.role === "Student") {
-    return { enrollment: { studentId: scope.studentId } };
-  }
-  return {};
-}
+export type { ExamResultFilters };
 
 export async function findMany(filters: ExamResultFilters, scope?: AuthorizationScope) {
-  const where: Prisma.ExamResultWhereInput = { ...applyScope(scope) };
-
-  if (filters.examId) where.examId = filters.examId;
-  if (filters.enrollmentId) where.enrollmentId = filters.enrollmentId;
-
   return prisma.examResult.findMany({
-    where: {
-      ...where,
-      ...(filters.studentId ? { enrollment: { studentId: filters.studentId } } : {}),
-    },
-    include: {
-      exam: true,
-      enrollment: { include: { student: true, offering: { include: { course: true } } } },
-    },
+    where: buildExamResultWhere(filters, scope),
+    include: examResultInclude,
     orderBy: { resultId: "desc" },
   });
 }
 
 export async function findById(id: number, scope?: AuthorizationScope) {
   return prisma.examResult.findFirst({
-    where: { resultId: id, ...applyScope(scope) },
-    include: {
-      exam: true,
-      enrollment: { include: { student: true, offering: { include: { course: true } } } },
-    },
+    where: { resultId: id, ...buildExamResultWhere({}, scope) },
+    include: examResultInclude,
   });
 }
 
@@ -60,15 +34,5 @@ export async function remove(id: number) {
 }
 
 export async function count(filters: ExamResultFilters, scope?: AuthorizationScope) {
-  const where: Prisma.ExamResultWhereInput = { ...applyScope(scope) };
-
-  if (filters.examId) where.examId = filters.examId;
-  if (filters.enrollmentId) where.enrollmentId = filters.enrollmentId;
-
-  return prisma.examResult.count({
-    where: {
-      ...where,
-      ...(filters.studentId ? { enrollment: { studentId: filters.studentId } } : {}),
-    },
-  });
+  return prisma.examResult.count({ where: buildExamResultWhere(filters, scope) });
 }

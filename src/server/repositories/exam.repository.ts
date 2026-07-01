@@ -1,37 +1,23 @@
 import { prisma } from "@/server/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import type { AuthorizationScope } from "@/permissions";
+import { examInclude, buildExamWhere } from "@/server/repositories/helpers/exam-query.helper";
+import type { ExamFilters } from "@/server/repositories/helpers/exam-query.helper";
 
-export type ExamFilters = {
-  offeringId?: number;
-};
-
-function applyScope(scope?: AuthorizationScope): Prisma.ExamWhereInput {
-  if (scope?.role === "Teacher") {
-    return { offering: { teacherId: scope.teacherId } };
-  }
-  if (scope?.role === "Student") {
-    return { offering: { enrollments: { some: { studentId: scope.studentId } } } };
-  }
-  return {};
-}
+export type { ExamFilters };
 
 export async function findMany(filters: ExamFilters = {}, scope?: AuthorizationScope) {
-  const where: Prisma.ExamWhereInput = { ...applyScope(scope) };
-
-  if (filters.offeringId) where.offeringId = filters.offeringId;
-
   return prisma.exam.findMany({
-    where,
-    include: { offering: { include: { course: true } } },
+    where: buildExamWhere(filters, scope),
+    include: examInclude,
     orderBy: { examDate: "desc" },
   });
 }
 
 export async function findById(id: number, scope?: AuthorizationScope) {
   return prisma.exam.findFirst({
-    where: { examId: id, ...applyScope(scope) },
-    include: { offering: { include: { course: true } } },
+    where: { examId: id, ...buildExamWhere({}, scope) },
+    include: examInclude,
   });
 }
 
@@ -48,9 +34,5 @@ export async function remove(id: number) {
 }
 
 export async function count(filters: ExamFilters = {}, scope?: AuthorizationScope) {
-  const where: Prisma.ExamWhereInput = { ...applyScope(scope) };
-
-  if (filters.offeringId) where.offeringId = filters.offeringId;
-
-  return prisma.exam.count({ where });
+  return prisma.exam.count({ where: buildExamWhere(filters, scope) });
 }

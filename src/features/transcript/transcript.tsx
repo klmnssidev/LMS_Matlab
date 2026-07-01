@@ -32,9 +32,11 @@ import { useTranscript } from "@/features/transcript/hooks/use-transcript";
 
 export function Transcript() {
   const [selectedSemester, setSelectedSemester] = useState("all");
-  const { data: transcript, isLoading, error } = useTranscript(
-    selectedSemester !== "all" ? Number(selectedSemester) : undefined
-  );
+  const { data: transcript, isLoading, error } = useTranscript();
+
+  const filteredSemesters = transcript?.semesters.filter(
+    (s) => selectedSemester === "all" || s.semesterName === selectedSemester
+  ) ?? [];
 
   if (isLoading) {
     return (
@@ -72,6 +74,8 @@ export function Transcript() {
     );
   }
 
+  const uniqueSemesterNames = [...new Set(transcript.semesters.map((s) => s.semesterName))];
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -86,9 +90,9 @@ export function Transcript() {
           <SelectContent>
             <SelectGroup>
               <SelectItem value="all">All Semesters</SelectItem>
-              {transcript.semesters.map((s, i) => (
-                <SelectItem key={i} value={String(i)}>
-                  {s.semesterName} ({s.academicYear})
+              {uniqueSemesterNames.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -116,7 +120,7 @@ export function Transcript() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Semesters Completed</p>
-              <p className="font-medium">{transcript.semestersCount ?? transcript.semesters.length}</p>
+              <p className="font-medium">{transcript.semesters.length}</p>
             </div>
           </div>
         </CardContent>
@@ -159,8 +163,8 @@ export function Transcript() {
         </Card>
       </div>
 
-      {transcript.semesters.map((semester, idx) => (
-        <Card key={idx}>
+      {filteredSemesters.map((semester) => (
+        <Card key={semester.semesterName + semester.academicYear}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">

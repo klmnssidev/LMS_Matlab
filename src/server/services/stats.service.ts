@@ -3,6 +3,9 @@ import * as statsRepo from "@/server/repositories/stats.repository";
 import * as departmentRepo from "@/server/repositories/department.repository";
 import * as offeringService from "@/server/services/course-offering.service";
 import type { AuthorizationScope } from "@/permissions";
+import { calculateGpa } from "@/server/lib/academic/gpa";
+import { calculateAttendancePercentage } from "@/server/lib/academic/attendance";
+import { calculateCompletedCredits } from "@/server/lib/academic/credits";
 
 type EnrollAgg = { total: number; active: number; completed: number };
 type UpcomingExam = { exam_id: number; exam_type: string; exam_date: string; course_name: string; course_code: string };
@@ -20,7 +23,7 @@ export type DashboardStats = {
   gradeDistribution: { grade: string; count: number }[];
 };
 
-export type StudentStats = {
+export type StudentDashboardStats = {
   enrollments: EnrollAgg;
   upcomingExams: UpcomingExam[];
   attendance: AttSummary[];
@@ -38,6 +41,53 @@ export type TeacherStats = {
   totalStudents: number;
   upcomingExams: { exam_id: number; course_name: string; exam_date: string; exam_type: string }[];
 };
+
+async function getEnrollmentStats(studentId: number): Promise<EnrollAgg> {
+  return statsRepo.getStudentEnrollmentAgg(studentId);
+}
+
+async function getUpcomingExams(studentId: number): Promise<UpcomingExam[]> {
+  return statsRepo.getStudentUpcomingExams(studentId);
+}
+
+async function getAttendanceStats(studentId: number, semesterId?: number): Promise<{ attendance: AttSummary[]; attendancePercentage: number }> {
+  const raw = await statsRepo.getStudentAttendanceSummary(studentId, semesterId);
+  const percentage = calculateAttendancePercentage(raw);
+  return { attendance: raw, attendancePercentage: percentage };
+}
+
+async function getGpaStats(studentId: number): Promise<number | null> {
+  const raw = await statsRepo.getStudentRawGrades(studentId);
+  return calculateGpa(raw.map((r) => ({ finalGrade: r.final_grade, creditHours: r.credit_hours })));
+}
+
+async function getCreditsStats(studentId: number): Promise<number> {
+  const raw = await statsRepo.getStudentCreditEnrollments(studentId);
+  return calculateCompletedCredits(raw.map((r) => ({ status: r.status, creditHours: r.credit_hours })));
+}
+
+async function getDepartmentInfo(departmentId: number): Promise<string> {
+  const dept = await departmentRepo.findById(departmentId);
+  return dept?.departmentName ?? "—";
+}
+
+async function getCurrentSemester(): Promise<string | null> {
+  return statsRepo.getCurrentSemester();
+}
+
+async function getRecentGrades(studentId: number): Promise<RecentGrade[]> {
+  const raw = await statsRepo.getStudentRecentGrades(studentId);
+  return raw.map((g) => ({
+    exam_type: g.exam_type,
+    course_name: g.course_name,
+    score: g.score,
+    max_score: g.max_score,
+  }));
+}
+
+async function getSemesters(studentId: number): Promise<{ semesterId: number; semesterName: string; academicYear: string }[]> {
+  return statsRepo.getStudentSemesters(studentId);
+}
 
 export async function getAdminStats(): Promise<DashboardStats> {
   const [totalStudents, totalTeachers, totalCourses, totalDepartments, activeEnrollments, studentsByDepartment, enrollmentTrend, gradeDistribution] = await Promise.all([
@@ -67,35 +117,29 @@ export async function getStudentStats(
   studentId: number,
   studentDepartmentId: number,
   semesterId?: number
-): Promise<StudentStats> {
-  const department = await departmentRepo.findById(studentDepartmentId);
-  const [enrollments, upcomingExams, attendance, attendancePercentage, gpa, completedCredits, currentSemester, recentGrades, semesters] = await Promise.all([
-    statsRepo.getStudentEnrollmentAgg(studentId),
-    statsRepo.getStudentUpcomingExams(studentId),
-    statsRepo.getStudentAttendanceSummary(studentId, semesterId),
-    statsRepo.getStudentAttendancePercentage(studentId, semesterId),
-    statsRepo.getStudentGpa(studentId),
-    statsRepo.getStudentCompletedCredits(studentId),
-    statsRepo.getCurrentSemester(),
-    statsRepo.getStudentRecentGrades(studentId),
-    statsRepo.getStudentSemesters(studentId),
+): Promise<StudentDashboardStats> {
+  const [enrollments, upcomingExams, attendanceStats, gpa, completedCredits, departmentName, currentSemester, recentGrades, semesters] = await Promise.all([
+    getEnrollmentStats(studentId),
+    getUpcomingExams(studentId),
+    getAttendanceStats(studentId, semesterId),
+    getGpaStats(studentId),
+    getCreditsStats(studentId),
+    getDepartmentInfo(studentDepartmentId),
+    getCurrentSemester(),
+    getRecentGrades(studentId),
+    getSemesters(studentId),
   ]);
 
   return {
     enrollments,
     upcomingExams,
-    attendance,
-    attendancePercentage,
+    attendance: attendanceStats.attendance,
+    attendancePercentage: attendanceStats.attendancePercentage,
     gpa,
     completedCredits,
-    departmentName: department?.departmentName ?? "—",
+    departmentName,
     currentSemester,
-    recentGrades: recentGrades.map((g) => ({
-      exam_type: g.exam_type,
-      course_name: g.course_name,
-      score: g.score,
-      max_score: g.max_score,
-    })),
+    recentGrades,
     semesters,
   };
 }

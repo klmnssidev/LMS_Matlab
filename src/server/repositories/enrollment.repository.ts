@@ -1,59 +1,23 @@
 import { prisma } from "@/server/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import type { AuthorizationScope } from "@/permissions";
+import { enrollmentInclude, buildEnrollmentWhere } from "@/server/repositories/helpers/enrollment-query.helper";
+import type { EnrollmentFilters } from "@/server/repositories/helpers/enrollment-query.helper";
 
-export type EnrollmentFilters = {
-  studentId?: number;
-  offeringId?: number;
-  status?: string;
-};
-
-function applyScope(scope?: AuthorizationScope): Prisma.EnrollmentWhereInput {
-  if (scope?.role === "Teacher") {
-    return { offering: { teacherId: scope.teacherId } };
-  }
-  if (scope?.role === "Student") {
-    return { studentId: scope.studentId };
-  }
-  return {};
-}
+export type { EnrollmentFilters };
 
 export async function findMany(filters: EnrollmentFilters, scope?: AuthorizationScope) {
-  const where: Prisma.EnrollmentWhereInput = { ...applyScope(scope) };
-
-  if (filters.studentId) where.studentId = filters.studentId;
-  if (filters.offeringId) where.offeringId = filters.offeringId;
-  if (filters.status) where.status = filters.status;
-
   return prisma.enrollment.findMany({
-    where,
-    include: {
-      student: true,
-      offering: {
-        include: {
-          course: { include: { department: true } },
-          semester: true,
-          teacher: true,
-        },
-      },
-    },
+    where: buildEnrollmentWhere(filters, scope),
+    include: enrollmentInclude,
     orderBy: { enrollmentDate: "desc" },
   });
 }
 
 export async function findById(id: number, scope?: AuthorizationScope) {
   return prisma.enrollment.findFirst({
-    where: { enrollmentId: id, ...applyScope(scope) },
-    include: {
-      student: true,
-      offering: {
-        include: {
-          course: { include: { department: true } },
-          semester: true,
-          teacher: true,
-        },
-      },
-    },
+    where: { enrollmentId: id, ...buildEnrollmentWhere({}, scope) },
+    include: enrollmentInclude,
   });
 }
 
@@ -70,13 +34,7 @@ export async function remove(id: number) {
 }
 
 export async function count(filters: EnrollmentFilters, scope?: AuthorizationScope) {
-  const where: Prisma.EnrollmentWhereInput = { ...applyScope(scope) };
-
-  if (filters.studentId) where.studentId = filters.studentId;
-  if (filters.offeringId) where.offeringId = filters.offeringId;
-  if (filters.status) where.status = filters.status;
-
-  return prisma.enrollment.count({ where });
+  return prisma.enrollment.count({ where: buildEnrollmentWhere(filters, scope) });
 }
 
 export async function findTranscriptEnrollments(

@@ -27,6 +27,7 @@ export const TranscriptEnrollmentSchema = z.object({
 export type TranscriptEnrollment = z.infer<typeof TranscriptEnrollmentSchema>;
 
 export const SemesterGpaSchema = z.object({
+  semesterId: z.number(),
   semesterName: z.string(),
   academicYear: z.string(),
   gpa: z.number().nullable(),
@@ -44,7 +45,6 @@ export const TranscriptResponseSchema = z.object({
   semesters: z.array(SemesterGpaSchema),
   cumulativeGpa: z.number().nullable(),
   totalCompletedCredits: z.number(),
-  semestersCount: z.number(),
 });
 
 export type TranscriptResponse = z.infer<typeof TranscriptResponseSchema>;
