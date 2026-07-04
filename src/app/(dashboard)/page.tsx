@@ -34,9 +34,9 @@ export default function DashboardPage() {
   }
 
   switch (role) {
-    case "Admin":
+    case "ADMIN":
       return <AdminDashboard />;
-    case "Teacher":
+    case "TEACHER":
       return <TeacherDashboard />;
     default:
       return <StudentDashboard />;

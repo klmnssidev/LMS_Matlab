@@ -11,6 +11,10 @@ const LinkTeacherSchema = z.object({
   employeeNumber: z.string().min(1, "Employee number is required"),
 });
 
+const LinkAdminSchema = z.object({
+  email: z.string().email("Valid email is required"),
+});
+
 export async function link(req: NextRequest) {
   try {
     const session = await auth();
@@ -28,9 +32,12 @@ export async function link(req: NextRequest) {
     } else if ("employeeNumber" in body) {
       const parsed = LinkTeacherSchema.parse(body);
       linkedUser = await accountLinkingService.linkTeacher(session.userId, parsed.employeeNumber);
+    } else if ("email" in body) {
+      const parsed = LinkAdminSchema.parse(body);
+      linkedUser = await accountLinkingService.linkAdmin(session.userId, parsed.email);
     } else {
       return NextResponse.json(
-        { error: "Provide studentNumber or employeeNumber" },
+        { error: "Provide studentNumber, employeeNumber, or email" },
         { status: 400 },
       );
     }
@@ -38,20 +45,20 @@ export async function link(req: NextRequest) {
     return NextResponse.json({
       success: true,
       type: linkedUser.role.toLowerCase(),
-      id: linkedUser.studentId ?? linkedUser.teacherId,
+      id: linkedUser.id,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Validation failed", details: error.issues }, { status: 400 });
     }
 
-    if (
-      error instanceof accountLinkingService.AccountNotLinkedError ||
+    if (error instanceof accountLinkingService.AccountNotLinkedError ||
       error instanceof accountLinkingService.InvalidStudentNumberError ||
       error instanceof accountLinkingService.InvalidEmployeeNumberError ||
       error instanceof accountLinkingService.AccountAlreadyLinkedError ||
       error instanceof accountLinkingService.StudentAlreadyLinkedError ||
-      error instanceof accountLinkingService.TeacherAlreadyLinkedError
+      error instanceof accountLinkingService.TeacherAlreadyLinkedError ||
+      error instanceof accountLinkingService.AdminNotFoundError
     ) {
       return NextResponse.json({ error: error.code }, { status: error.status });
     }

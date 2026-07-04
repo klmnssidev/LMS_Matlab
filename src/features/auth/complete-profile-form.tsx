@@ -25,6 +25,7 @@ import {
 const formSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("student"), studentNumber: z.string().min(1, "Student number is required") }),
   z.object({ type: z.literal("teacher"), employeeNumber: z.string().min(1, "Employee number is required") }),
+  z.object({ type: z.literal("admin"), email: z.string().email("Valid email is required") }),
 ]);
 
 type FormValues = z.infer<typeof formSchema>;
@@ -32,7 +33,12 @@ type FormValues = z.infer<typeof formSchema>;
 const typeItems = [
   { label: "Student", value: "student" },
   { label: "Teacher", value: "teacher" },
+  { label: "Admin", value: "admin" },
 ];
+
+function toError(field: { message?: string } | undefined) {
+  return field ? [{ message: field.message }] : undefined;
+}
 
 export function CompleteProfileForm() {
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +56,14 @@ export function CompleteProfileForm() {
     setIsPending(true);
 
     try {
-      const body = data.type === "student"
-        ? { studentNumber: data.studentNumber }
-        : { employeeNumber: data.employeeNumber };
+      let body: Record<string, string>;
+      if (data.type === "student") {
+        body = { studentNumber: data.studentNumber };
+      } else if (data.type === "teacher") {
+        body = { employeeNumber: data.employeeNumber };
+      } else {
+        body = { email: data.email };
+      }
 
       const res = await fetch("/api/account/link", {
         method: "POST",
@@ -131,7 +142,7 @@ export function CompleteProfileForm() {
                   aria-invalid={!!(errors as FieldErrors<Extract<FormValues, { type: "student" }>>).studentNumber}
                 />
                 <FieldError
-                  errors={(errors as FieldErrors<Extract<FormValues, { type: "student" }>>).studentNumber ? [{ message: (errors as FieldErrors<Extract<FormValues, { type: "student" }>>).studentNumber!.message }] : undefined}
+                  errors={toError((errors as FieldErrors<Extract<FormValues, { type: "student" }>>).studentNumber)}
                 />
               </Field>
             )}
@@ -146,7 +157,23 @@ export function CompleteProfileForm() {
                   aria-invalid={!!(errors as FieldErrors<Extract<FormValues, { type: "teacher" }>>).employeeNumber}
                 />
                 <FieldError
-                  errors={(errors as FieldErrors<Extract<FormValues, { type: "teacher" }>>).employeeNumber ? [{ message: (errors as FieldErrors<Extract<FormValues, { type: "teacher" }>>).employeeNumber!.message }] : undefined}
+                  errors={toError((errors as FieldErrors<Extract<FormValues, { type: "teacher" }>>).employeeNumber)}
+                />
+              </Field>
+            )}
+
+            {userType === "admin" && (
+              <Field data-invalid={!!(errors as FieldErrors<Extract<FormValues, { type: "admin" }>>).email}>
+                <FieldLabel htmlFor="email">Admin Email</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@university.edu"
+                  {...register("email")}
+                  aria-invalid={!!(errors as FieldErrors<Extract<FormValues, { type: "admin" }>>).email}
+                />
+                <FieldError
+                  errors={toError((errors as FieldErrors<Extract<FormValues, { type: "admin" }>>).email)}
                 />
               </Field>
             )}

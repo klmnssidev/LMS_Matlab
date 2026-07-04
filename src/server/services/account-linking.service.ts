@@ -33,6 +33,14 @@ export class TeacherAlreadyLinkedError extends Error {
   status = 409;
 }
 
+export class AdminNotFoundError extends Error {
+  code = "ADMIN_NOT_FOUND";
+  status = 404;
+  constructor() {
+    super("No admin record found for this email");
+  }
+}
+
 export type LinkedUser = {
   id: number;
   role: "ADMIN" | "STUDENT" | "TEACHER";
@@ -116,7 +124,7 @@ export async function linkAdmin(clerkUserId: string, email: string): Promise<Lin
   if (existing) throw new AccountAlreadyLinkedError();
 
   const admin = await adminRepo.findByEmail(email);
-  if (!admin) throw new Error("No admin record found for this email");
+  if (!admin) throw new AdminNotFoundError();
 
   const account = await userAccountRepo.create({
     clerkUserId,
