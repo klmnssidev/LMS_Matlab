@@ -109,7 +109,7 @@ export function AdminDashboard() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={Building2} label="Departments" value={s.totalDepartments} />
         <StatCard icon={CalendarCheck} label="Exams This Semester" value={s.examsThisSemester} />
-        <StatCard icon={Percent} label="Attendance Rate" value={s.attendanceRate > 0 ? `${s.attendanceRate}%` : "—"} />
+        <StatCard icon={Percent} label="Attendance Rate" value={s.attendanceRate != null ? `${s.attendanceRate}%` : "—"} />
         <StatCard icon={Layers} label="Active Semester" value={s.activeSemester ?? "—"} />
       </div>
 

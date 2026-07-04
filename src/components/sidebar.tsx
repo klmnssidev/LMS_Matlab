@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAbility } from "@/features/auth/hooks/use-ability";
+import { createMongoAbility } from "@casl/ability";
 import type { Subject } from "@/permissions";
 import {
   LayoutDashboard,
@@ -18,7 +19,6 @@ import {
   Trophy,
   TableProperties,
   FileSpreadsheet,
-  User,
   Calendar,
   ScrollText,
   Building2,
@@ -39,71 +39,48 @@ type NavSection = {
   items: NavItem[];
 };
 
-function useRoleBasedNav(role: string | null): NavSection[] {
-  if (role === "ADMIN") {
-    return [
-      {
-        items: [
-          { href: "/", label: "Dashboard", icon: LayoutDashboard, subject: "Dashboard", action: "read" },
-        ],
-      },
-      {
-        title: "Management",
-        items: [
-          { href: "/students", label: "Students", icon: Users, subject: "Student", action: "read" },
-          { href: "/teachers", label: "Teachers", icon: GraduationCap, subject: "Teacher", action: "read" },
-          { href: "/departments", label: "Departments", icon: Building2, subject: "Department", action: "read" },
-          { href: "/courses", label: "Courses", icon: BookOpen, subject: "Course", action: "read" },
-          { href: "/course-offerings", label: "Course Offerings", icon: TableProperties, subject: "CourseOffering", action: "read" },
-          { href: "/enrollments", label: "Enrollments", icon: ClipboardList, subject: "Enrollment", action: "read" },
-          { href: "/attendance", label: "Attendance", icon: CalendarCheck, subject: "Attendance", action: "read" },
-          { href: "/exams", label: "Exams", icon: ClipboardList, subject: "Exam", action: "read" },
-          { href: "/exam-results", label: "Exam Results", icon: FileSpreadsheet, subject: "ExamResult", action: "read" },
-          { href: "/semesters", label: "Semesters", icon: Layers, subject: "Semester", action: "read" },
-          { href: "/classrooms", label: "Classrooms", icon: DoorOpen, subject: "Classroom", action: "read" },
-          { href: "/posters", label: "Posters", icon: ImageIcon, subject: "Poster", action: "read" },
-        ],
-      },
+const ALL_SECTIONS: NavSection[] = [
+  {
+    items: [
+      { href: "/", label: "Dashboard", icon: LayoutDashboard, subject: "Dashboard", action: "read" },
+    ],
+  },
+  {
+    title: "Management",
+    items: [
+      { href: "/students", label: "Students", icon: Users, subject: "Student", action: "read" },
+      { href: "/teachers", label: "Teachers", icon: GraduationCap, subject: "Teacher", action: "read" },
+      { href: "/departments", label: "Departments", icon: Building2, subject: "Department", action: "read" },
+      { href: "/courses", label: "Courses", icon: BookOpen, subject: "Course", action: "read" },
+      { href: "/course-offerings", label: "Course Offerings", icon: TableProperties, subject: "CourseOffering", action: "read" },
+      { href: "/enrollments", label: "Enrollments", icon: ClipboardList, subject: "Enrollment", action: "read" },
+      { href: "/attendance", label: "Attendance", icon: CalendarCheck, subject: "Attendance", action: "read" },
+      { href: "/exams", label: "Exams", icon: ClipboardList, subject: "Exam", action: "read" },
+      { href: "/exam-results", label: "Exam Results", icon: FileSpreadsheet, subject: "ExamResult", action: "read" },
+      { href: "/semesters", label: "Semesters", icon: Layers, subject: "Semester", action: "read" },
+      { href: "/classrooms", label: "Classrooms", icon: DoorOpen, subject: "Classroom", action: "read" },
+      { href: "/posters", label: "Posters", icon: ImageIcon, subject: "Poster", action: "read" },
+    ],
+  },
+  {
+    items: [
+      { href: "/my-courses", label: "My Courses", icon: BookMarked, subject: "MyEnrollments", action: "read" },
+      { href: "/my-attendance", label: "My Attendance", icon: CalendarCheck, subject: "MyAttendance", action: "read" },
+      { href: "/my-exams", label: "My Exams", icon: Calendar, subject: "MyExams", action: "read" },
+      { href: "/schedule", label: "Schedule", icon: Calendar, subject: "MySchedule", action: "read" },
+      { href: "/my-grades", label: "My Grades", icon: Trophy, subject: "MyGrades", action: "read" },
+      { href: "/transcript", label: "Transcript", icon: ScrollText, subject: "MyGrades", action: "read" },
+    ],
+  },
+];
 
-    ];
-  }
-
-  if (role === "TEACHER") {
-    return [
-      {
-        items: [
-          { href: "/", label: "Dashboard", icon: LayoutDashboard, subject: "Dashboard", action: "read" },
-        ],
-      },
-      {
-        items: [
-          { href: "/my-courses", label: "My Courses", icon: BookMarked, subject: "MyEnrollments", action: "read" },
-          { href: "/attendance", label: "Attendance", icon: CalendarCheck, subject: "Attendance", action: "read" },
-          { href: "/exams", label: "Exams", icon: ClipboardList, subject: "Exam", action: "read" },
-          { href: "/exam-results", label: "Exam Results", icon: FileSpreadsheet, subject: "ExamResult", action: "read" },
-        ],
-      },
-    ];
-  }
-
-  // Student
-  return [
-    {
-      items: [
-        { href: "/", label: "Dashboard", icon: LayoutDashboard, subject: "Dashboard", action: "read" },
-      ],
-    },
-    {
-      items: [
-        { href: "/my-courses", label: "My Courses", icon: BookMarked, subject: "MyEnrollments", action: "read" },
-        { href: "/my-attendance", label: "My Attendance", icon: CalendarCheck, subject: "MyAttendance", action: "read" },
-        { href: "/my-exams", label: "My Exams", icon: Calendar, subject: "MyExams", action: "read" },
-        { href: "/schedule", label: "Schedule", icon: Calendar, subject: "MySchedule", action: "read" },
-        { href: "/my-grades", label: "My Grades", icon: Trophy, subject: "MyGrades", action: "read" },
-        { href: "/transcript", label: "Transcript", icon: ScrollText, subject: "MyGrades", action: "read" },
-      ],
-    },
-  ];
+function getFilteredNav(ability: ReturnType<typeof createMongoAbility>): NavSection[] {
+  return ALL_SECTIONS
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => ability.can(item.action, item.subject)),
+    }))
+    .filter((section) => section.items.length > 0);
 }
 
 export function Sidebar() {
@@ -113,7 +90,10 @@ export function Sidebar() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  const sections = mounted ? useRoleBasedNav(role) : [];
+  const sections = useMemo(() => {
+    if (!mounted || !ability) return [];
+    return getFilteredNav(ability);
+  }, [mounted, ability]);
 
   return (
     <aside className="w-64 border-r bg-sidebar flex flex-col">

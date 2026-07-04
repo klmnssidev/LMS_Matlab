@@ -39,9 +39,11 @@ export async function getById(req: NextRequest) {
     const authz = await getAuthorizationContext();
     authz.authorize("read", "Exam");
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-    const exam = await examService.getById(Number(id), authz.scope);
+    const raw = searchParams.get("id");
+    if (!raw) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const id = Number(raw);
+    if (!Number.isFinite(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+    const exam = await examService.getById(id, authz.scope);
     if (!exam) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(exam);
   } catch (error) {
@@ -51,10 +53,11 @@ export async function getById(req: NextRequest) {
 
 export async function create(req: NextRequest) {
   try {
-    await authorize("create", "Exam");
+    const authz = await getAuthorizationContext();
+    authz.authorize("create", "Exam");
     const body = await req.json();
     const parsed = CreateExamSchema.parse(body);
-    const exam = await examService.create(parsed);
+    const exam = await examService.create(parsed, authz.scope);
     return NextResponse.json(exam, { status: 201 });
   } catch (error) {
     if (error instanceof Error && "issues" in error) return zodErrorResponse(error);
@@ -69,8 +72,10 @@ export async function update(req: NextRequest) {
     const body = await req.json();
     const { exam_id, ...data } = body;
     if (!exam_id) return NextResponse.json({ error: "exam_id required" }, { status: 400 });
+    const id = Number(exam_id);
+    if (!Number.isFinite(id)) return NextResponse.json({ error: "Invalid exam_id" }, { status: 400 });
     const parsed = UpdateExamSchema.parse(data);
-    const exam = await examService.update(exam_id, parsed, authz.scope);
+    const exam = await examService.update(id, parsed, authz.scope);
     if (!exam) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(exam);
   } catch (error) {
@@ -84,9 +89,11 @@ export async function remove(req: NextRequest) {
     const authz = await getAuthorizationContext();
     authz.authorize("delete", "Exam");
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-    const result = await examService.remove(Number(id), authz.scope);
+    const raw = searchParams.get("id");
+    if (!raw) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const id = Number(raw);
+    if (!Number.isFinite(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+    const result = await examService.remove(id, authz.scope);
     if (!result) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch (error) {

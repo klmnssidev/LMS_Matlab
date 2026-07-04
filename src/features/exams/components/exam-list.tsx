@@ -128,7 +128,7 @@ export function ExamList() {
                   </TableCell>
                 </TableRow>
               ))}
-              {!exams || exams.length === 0 && (
+              {(!exams || exams.length === 0) && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">
                     No exams yet.

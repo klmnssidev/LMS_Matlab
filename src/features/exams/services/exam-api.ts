@@ -8,7 +8,7 @@ export async function fetchExams(params?: { offering_id?: number }): Promise<Exa
   const res = await fetch(url.toString());
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Failed to fetch exams" }));
-    throw new Error(err.error);
+    throw new Error(err.error ?? "Failed to fetch exams");
   }
   return res.json();
 }
@@ -17,7 +17,7 @@ export async function fetchExam(id: number): Promise<ExamJoined> {
   const res = await fetch(`${BASE}?id=${id}`);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Failed to fetch exam" }));
-    throw new Error(err.error);
+    throw new Error(err.error ?? "Failed to fetch exam");
   }
   return res.json();
 }
@@ -30,7 +30,7 @@ export async function createExam(data: Record<string, unknown>): Promise<ExamJoi
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Failed to create exam" }));
-    throw new Error(err.error);
+    throw new Error(err.error ?? "Failed to create exam");
   }
   return res.json();
 }
@@ -43,7 +43,7 @@ export async function updateExam(data: Record<string, unknown>): Promise<ExamJoi
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Failed to update exam" }));
-    throw new Error(err.error);
+    throw new Error(err.error ?? "Failed to update exam");
   }
   return res.json();
 }
@@ -52,6 +52,6 @@ export async function deleteExam(id: number): Promise<void> {
   const res = await fetch(`${BASE}?id=${id}`, { method: "DELETE" });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Failed to delete exam" }));
-    throw new Error(err.error);
+    throw new Error(err.error ?? "Failed to delete exam");
   }
 }

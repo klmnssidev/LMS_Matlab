@@ -186,17 +186,17 @@ export async function getAdminExamsThisSemester(): Promise<number> {
   return rows[0]?.count ?? 0;
 }
 
-export async function getAdminAttendanceRate(): Promise<number> {
-  const rows = await prisma.$queryRaw<{ rate: number }[]>`
+export async function getAdminAttendanceRate(): Promise<number | null> {
+  const rows = await prisma.$queryRaw<{ rate: number | null }[]>`
     SELECT
-      COALESCE(
-        ROUND(
-          (SUM(CASE WHEN a.status IN ('Present', 'Late') THEN 1 ELSE 0 END)::decimal / NULLIF(COUNT(*), 0)) * 100
-        ), 0
-      )::int as rate
+      CASE WHEN COUNT(*) = 0 THEN NULL
+        ELSE ROUND(
+          (SUM(CASE WHEN a.status IN ('Present', 'Late') THEN 1 ELSE 0 END)::decimal / COUNT(*)) * 100
+        )::int
+      END as rate
     FROM attendance a
   `;
-  return rows[0]?.rate ?? 0;
+  return rows[0]?.rate ?? null;
 }
 
 export async function getAdminActiveSemester(): Promise<string | null> {
@@ -224,7 +224,7 @@ export async function getAdminCourseEnrollmentDistribution(): Promise<{ course_n
     FROM enrollments e
     JOIN course_offerings o ON o.offering_id = e.offering_id
     JOIN courses c ON c.course_id = o.course_id
-    GROUP BY c.course_name
+    GROUP BY c.course_id, c.course_name
     ORDER BY count DESC
   `;
 }

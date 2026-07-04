@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -40,7 +41,7 @@ export function ExamForm({ initialData, examId }: ExamFormProps) {
   const editData = initialData ?? fetchedExam;
   const isEdit = !!editData;
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, control, formState: { errors }, reset } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: editData ? {
       offeringId: String(editData.offeringId),
@@ -50,25 +51,43 @@ export function ExamForm({ initialData, examId }: ExamFormProps) {
     } : undefined,
   });
 
-  const onSubmit = async (values: FormValues) => {
-    if (isEdit) {
-      await updateExam.mutateAsync({
-        exam_id: editData.examId,
-        offeringId: Number(values.offeringId),
-        examType: values.examType,
-        examDate: values.examDate,
-        maxScore: Number(values.maxScore),
-      });
-    } else {
-      await createExam.mutateAsync({
-        offeringId: Number(values.offeringId),
-        examType: values.examType,
-        examDate: values.examDate,
-        maxScore: Number(values.maxScore),
+  useEffect(() => {
+    if (editData) {
+      reset({
+        offeringId: String(editData.offeringId),
+        examType: editData.examType,
+        examDate: editData.examDate,
+        maxScore: String(editData.maxScore),
       });
     }
-    router.push("/exams");
-    router.refresh();
+  }, [editData, reset]);
+
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const onSubmit = async (values: FormValues) => {
+    setSubmitError(null);
+    try {
+      if (isEdit) {
+        await updateExam.mutateAsync({
+          exam_id: editData.examId,
+          offeringId: Number(values.offeringId),
+          examType: values.examType,
+          examDate: values.examDate,
+          maxScore: Number(values.maxScore),
+        });
+      } else {
+        await createExam.mutateAsync({
+          offeringId: Number(values.offeringId),
+          examType: values.examType,
+          examDate: values.examDate,
+          maxScore: Number(values.maxScore),
+        });
+      }
+      router.push("/exams");
+      router.refresh();
+    } catch {
+      setSubmitError("Failed to save exam. Please try again.");
+    }
   };
 
   const offerings = offeringsData?.data ?? [];
@@ -148,6 +167,7 @@ export function ExamForm({ initialData, examId }: ExamFormProps) {
               <Input id="maxScore" type="number" step="0.01" {...register("maxScore")} />
               <FieldError errors={toError(errors.maxScore)} />
             </Field>
+            {submitError && <p className="text-sm text-destructive">{submitError}</p>}
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={createExam.isPending || updateExam.isPending}>
                 {createExam.isPending || updateExam.isPending ? "Saving..." : "Save"}

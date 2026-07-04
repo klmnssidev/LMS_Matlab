@@ -57,13 +57,10 @@ export async function link(req: NextRequest) {
       error instanceof accountLinkingService.InvalidEmployeeNumberError ||
       error instanceof accountLinkingService.AccountAlreadyLinkedError ||
       error instanceof accountLinkingService.StudentAlreadyLinkedError ||
-      error instanceof accountLinkingService.TeacherAlreadyLinkedError
+      error instanceof accountLinkingService.TeacherAlreadyLinkedError ||
+      error instanceof accountLinkingService.AdminNotFoundError
     ) {
       return NextResponse.json({ error: error.code }, { status: error.status });
-    }
-
-    if (error instanceof Error && error.message.includes("admin record")) {
-      return NextResponse.json({ error: "No admin record found for this email" }, { status: 404 });
     }
 
     const message = error instanceof Error ? error.message : "Internal server error";

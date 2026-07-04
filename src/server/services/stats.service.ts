@@ -17,7 +17,7 @@ export type DashboardStats = {
   activeEnrollments: number;
   totalCourseOfferings: number;
   examsThisSemester: number;
-  attendanceRate: number;
+  attendanceRate: number | null;
   activeSemester: string | null;
   studentsByDepartment: { department_name: string; count: number }[];
   enrollmentTrend: { semester_name: string; count: number }[];

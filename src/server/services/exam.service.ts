@@ -1,3 +1,5 @@
+import { prisma } from "@/server/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import * as examRepo from "@/server/repositories/exam.repository";
 import type { ExamFilters } from "@/server/repositories/exam.repository";
 import type { CreateExam, UpdateExam, ExamJoined } from "@/server/schemas/exam.schema";
@@ -20,6 +22,21 @@ function toExamJoined(row: Awaited<ReturnType<typeof examRepo.findMany>>[number]
   };
 }
 
+async function validateOfferingScope(offeringId: number, scope?: AuthorizationScope): Promise<void> {
+  if (!scope || scope.role === "Admin") return;
+  if (scope.role === "Teacher") {
+    const offering = await prisma.courseOffering.findUnique({
+      where: { offeringId },
+      select: { teacherId: true },
+    });
+    if (!offering || offering.teacherId !== scope.teacherId) {
+      throw new Error("Forbidden: cannot create exam for this offering");
+    }
+    return;
+  }
+  throw new Error("Forbidden: insufficient permissions");
+}
+
 export async function list(filters: ExamFilters = {}, scope?: AuthorizationScope) {
   const rows = await examRepo.findMany(filters, scope);
   return rows.map(toExamJoined);
@@ -31,7 +48,8 @@ export async function getById(id: number, scope?: AuthorizationScope) {
   return toExamJoined(row);
 }
 
-export async function create(data: CreateExam) {
+export async function create(data: CreateExam, scope?: AuthorizationScope) {
+  await validateOfferingScope(data.offeringId, scope);
   const row = await examRepo.create({
     offering: { connect: { offeringId: data.offeringId } },
     examType: data.examType,
@@ -45,7 +63,11 @@ export async function update(id: number, data: UpdateExam, scope?: Authorization
   const existing = await examRepo.findById(id, scope);
   if (!existing) return null;
 
-  const updateData: Record<string, unknown> = {};
+  if (data.offeringId !== undefined) {
+    await validateOfferingScope(data.offeringId, scope);
+  }
+
+  const updateData: Prisma.ExamUpdateInput = {};
   if (data.offeringId !== undefined) updateData.offering = { connect: { offeringId: data.offeringId } };
   if (data.examType !== undefined) updateData.examType = data.examType;
   if (data.examDate !== undefined) updateData.examDate = new Date(data.examDate);
