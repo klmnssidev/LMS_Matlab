@@ -1,16 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { ExamJoined } from "@/server/schemas/exam.schema";
 
-type Exam = {
-  examId: number;
-  examType: string;
-  examDate: string;
-  offeringId: number;
-  offering: { course: { courseCode: string; courseName: string } };
-};
-
-async function fetchExams(): Promise<Exam[]> {
+async function fetchExams(): Promise<ExamJoined[]> {
   const res = await fetch("/api/exams");
   if (!res.ok) throw new Error("Failed to fetch exams");
   return res.json();

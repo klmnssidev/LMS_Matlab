@@ -36,11 +36,18 @@ export async function findById(id: number, scope?: AuthorizationScope) {
 }
 
 export async function create(data: Prisma.ExamCreateInput) {
-  return prisma.exam.create({ data });
+  return prisma.exam.create({
+    data,
+    include: { offering: { include: { course: true } } },
+  });
 }
 
 export async function update(id: number, data: Prisma.ExamUpdateInput) {
-  return prisma.exam.update({ where: { examId: id }, data });
+  return prisma.exam.update({
+    where: { examId: id },
+    data,
+    include: { offering: { include: { course: true } } },
+  });
 }
 
 export async function remove(id: number) {

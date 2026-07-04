@@ -12,8 +12,13 @@ export const ExamSchema = z.object({
 export const CreateExamSchema = ExamSchema.omit({ examId: true });
 
 export const ExamJoinedSchema = ExamSchema.extend({
-  courseName: z.string(),
-  courseCode: z.string(),
+  offering: z.object({
+    course: z.object({
+      courseId: z.number(),
+      courseCode: z.string(),
+      courseName: z.string(),
+    }),
+  }),
 });
 
 export const ExamQuerySchema = z.object({
@@ -21,8 +26,11 @@ export const ExamQuerySchema = z.object({
   offeringId: z.coerce.number().optional(),
 });
 
+export const UpdateExamSchema = CreateExamSchema.partial();
+
 export type ExamQuery = z.infer<typeof ExamQuerySchema>;
 
 export type Exam = z.infer<typeof ExamSchema>;
 export type CreateExam = z.infer<typeof CreateExamSchema>;
+export type UpdateExam = z.infer<typeof UpdateExamSchema>;
 export type ExamJoined = z.infer<typeof ExamJoinedSchema>;

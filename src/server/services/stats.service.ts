@@ -15,9 +15,18 @@ export type DashboardStats = {
   totalCourses: number;
   totalDepartments: number;
   activeEnrollments: number;
+  totalCourseOfferings: number;
+  examsThisSemester: number;
+  attendanceRate: number;
+  activeSemester: string | null;
   studentsByDepartment: { department_name: string; count: number }[];
   enrollmentTrend: { semester_name: string; count: number }[];
   gradeDistribution: { grade: string; count: number }[];
+  attendanceOverview: { status: string; count: number }[];
+  courseEnrollmentDistribution: { course_name: string; count: number }[];
+  recentEnrollments: { enrollment_id: number; student_name: string; course_name: string; section_name: string; enrollment_date: string }[];
+  recentlyCreatedExams: { exam_id: number; exam_type: string; exam_date: string; course_code: string; course_name: string }[];
+  latestAttendance: { attendance_id: number; student_name: string; course_name: string; attendance_date: string; status: string }[];
 };
 
 export type StudentStats = {
@@ -40,15 +49,24 @@ export type TeacherStats = {
 };
 
 export async function getAdminStats(): Promise<DashboardStats> {
-  const [totalStudents, totalTeachers, totalCourses, totalDepartments, activeEnrollments, studentsByDepartment, enrollmentTrend, gradeDistribution] = await Promise.all([
+  const [totalStudents, totalTeachers, totalCourses, totalDepartments, activeEnrollments, totalCourseOfferings, examsThisSemester, attendanceRate, activeSemester, studentsByDepartment, enrollmentTrend, gradeDistribution, attendanceOverview, courseEnrollmentDistribution, recentEnrollments, recentlyCreatedExams, latestAttendance] = await Promise.all([
     statsRepo.getAdminTotalStudents(),
     statsRepo.getAdminTotalTeachers(),
     statsRepo.getAdminTotalCourses(),
     statsRepo.getAdminTotalDepartments(),
     statsRepo.getAdminActiveEnrollments(),
+    statsRepo.getAdminCourseOfferings(),
+    statsRepo.getAdminExamsThisSemester(),
+    statsRepo.getAdminAttendanceRate(),
+    statsRepo.getAdminActiveSemester(),
     statsRepo.getAdminStudentsByDepartment(),
     statsRepo.getAdminEnrollmentTrend(),
     statsRepo.getAdminGradeDistribution(),
+    statsRepo.getAdminAttendanceOverview(),
+    statsRepo.getAdminCourseEnrollmentDistribution(),
+    statsRepo.getAdminRecentEnrollments(),
+    statsRepo.getAdminRecentlyCreatedExams(),
+    statsRepo.getAdminLatestAttendance(),
   ]);
 
   return {
@@ -57,9 +75,18 @@ export async function getAdminStats(): Promise<DashboardStats> {
     totalCourses,
     totalDepartments,
     activeEnrollments,
+    totalCourseOfferings,
+    examsThisSemester,
+    attendanceRate,
+    activeSemester,
     studentsByDepartment,
     enrollmentTrend,
     gradeDistribution,
+    attendanceOverview,
+    courseEnrollmentDistribution,
+    recentEnrollments,
+    recentlyCreatedExams,
+    latestAttendance,
   };
 }
 
