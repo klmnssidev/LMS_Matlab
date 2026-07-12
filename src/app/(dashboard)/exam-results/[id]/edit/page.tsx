@@ -8,8 +8,8 @@ type Props = {
 
 export default async function EditExamResultPage({ params }: Props) {
   await authorizePage("update", "ExamResult");
-  const { id } = await params;
-  const resultId = Number(id);
-  if (!Number.isFinite(resultId)) notFound();
+  const raw = (await params).id.trim();
+  if (!/^\d+$/.test(raw) || raw === "0") notFound();
+  const resultId = Number(raw);
   return <ExamResultForm resultId={resultId} />;
 }

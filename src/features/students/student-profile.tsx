@@ -3,7 +3,7 @@
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Mail, Phone, Calendar, Pencil, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -62,16 +62,16 @@ export function StudentProfile({ id }: { id: number }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" render={<Link href="/students" />} nativeButton={false}>
+        <Link href="/students" className={buttonVariants({ variant: "ghost", size: "icon" })}>
           <ArrowLeft />
-        </Button>
+        </Link>
         <h1 className="text-3xl font-bold tracking-tight">{student.studentName}</h1>
         <div className="ml-auto flex gap-2">
           <Can I="update" a="Student">
-            <Button variant="outline" size="sm" render={<Link href={`/students/${student.studentId}/edit`} />} nativeButton={false}>
+            <Link href={`/students/${student.studentId}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
               <Pencil data-icon="inline-start" />
               Edit
-            </Button>
+            </Link>
           </Can>
           <Can I="delete" a="Student">
             <Button variant="destructive" size="sm" disabled={isDeleting} onClick={handleDelete}>

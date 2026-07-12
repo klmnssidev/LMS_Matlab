@@ -44,8 +44,8 @@ Never render items directly inside the content container.
 
 This applies to all group-based components:
 
-| Item | Group |
-|------|-------|
+| Item | Required parent |
+|------|-----------------|
 | `SelectItem`, `SelectLabel` | `SelectGroup` |
 | `DropdownMenuItem`, `DropdownMenuLabel`, `DropdownMenuSub` | `DropdownMenuGroup` |
 | `MenubarItem` | `MenubarGroup` |
