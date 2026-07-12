@@ -54,7 +54,7 @@ export function AttendanceList() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Attendance</h1>
         <Can I="create" a="Attendance">
-          <Button render={<Link href="/attendance/new" />}>
+          <Button render={<Link href="/attendance/new" />} nativeButton={false}>
             <Plus className="size-4" /> Bulk Entry
           </Button>
         </Can>

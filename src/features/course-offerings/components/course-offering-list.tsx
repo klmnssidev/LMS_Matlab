@@ -41,7 +41,7 @@ export function CourseOfferingList() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Course Offerings</h1>
         <Can I="create" a="CourseOffering">
-          <Button render={<Link href="/course-offerings/new" />}>
+          <Button render={<Link href="/course-offerings/new" />} nativeButton={false}>
             <Plus className="size-4" /> New Offering
           </Button>
         </Can>
@@ -79,7 +79,7 @@ export function CourseOfferingList() {
                   <TableCell>
                     <div className="flex gap-2">
                       <Can I="update" a="CourseOffering">
-                        <Button variant="outline" size="sm" render={<Link href={`/course-offerings/${o.offeringId}/edit`} />}>
+                        <Button variant="outline" size="sm" render={<Link href={`/course-offerings/${o.offeringId}/edit`} />} nativeButton={false}>
                           Edit
                         </Button>
                       </Can>

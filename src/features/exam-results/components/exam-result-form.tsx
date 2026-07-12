@@ -3,44 +3,101 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FieldGroup, Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { useCreateExamResult } from "@/features/exam-results/hooks/use-exam-results";
+import { useCreateExamResult, useUpdateExamResult, useExamResult } from "@/features/exam-results/hooks/use-exam-results";
 import { useExams } from "@/shared/hooks/use-exams";
 import { useOfferings } from "@/features/course-offerings/hooks/use-course-offerings";
 
-const formSchema = z.object({
-  examId: z.string().min(1, "Exam is required"),
-  enrollmentId: z.string().min(1, "Enrollment is required"),
-  score: z.string().min(1, "Score is required"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = {
+  examId: string;
+  enrollmentId: string;
+  score: string;
+};
 
 function toError(field: { message?: string } | undefined) {
   return field ? [{ message: field.message }] : undefined;
 }
 
-export function ExamResultForm() {
+type ExamResultFormProps = {
+  resultId?: number;
+};
+
+export function ExamResultForm({ resultId }: ExamResultFormProps) {
   const router = useRouter();
   const createExamResult = useCreateExamResult();
+  const updateExamResult = useUpdateExamResult();
+  const { data: fetchedResult } = useExamResult(resultId ?? null);
   const { data: exams } = useExams();
   const { data: offeringsData } = useOfferings();
+  const isEdit = !!resultId;
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>({
+  const maxScore = useMemo(() => {
+    if (isEdit && fetchedResult) return fetchedResult.maxScore;
+    return 100;
+  }, [isEdit, fetchedResult]);
+
+  const formSchema = useMemo(() => z.object({
+    examId: z.string().min(1, "Exam is required"),
+    enrollmentId: z.string().min(1, "Enrollment is required"),
+    score: z.string().min(1, "Score is required"),
+  }).superRefine((data, ctx) => {
+    const numScore = Number(data.score);
+    if (numScore > 100) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Score cannot exceed 100",
+        path: ["score"],
+      });
+    }
+    if (numScore > maxScore) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Score cannot exceed exam max score (${maxScore})`,
+        path: ["score"],
+      });
+    }
+  }), [maxScore]);
+
+  const { register, handleSubmit, control, formState: { errors }, reset } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      examId: "",
+      enrollmentId: "",
+      score: "",
+    },
   });
 
+  useEffect(() => {
+    if (fetchedResult) {
+      reset({
+        examId: String(fetchedResult.examId),
+        enrollmentId: String(fetchedResult.enrollmentId),
+        score: String(fetchedResult.score),
+      });
+    }
+  }, [fetchedResult, reset]);
+
+  const isPending = createExamResult.isPending || updateExamResult.isPending;
+
   const onSubmit = async (values: FormValues) => {
-    await createExamResult.mutateAsync({
-      examId: Number(values.examId),
-      enrollmentId: Number(values.enrollmentId),
-      score: Number(values.score),
-    });
+    if (isEdit && fetchedResult) {
+      await updateExamResult.mutateAsync({
+        result_id: fetchedResult.resultId,
+        score: Number(values.score),
+      });
+    } else {
+      await createExamResult.mutateAsync({
+        examId: Number(values.examId),
+        enrollmentId: Number(values.enrollmentId),
+        score: Number(values.score),
+      });
+    }
     router.push("/exam-results");
     router.refresh();
   };
@@ -48,7 +105,7 @@ export function ExamResultForm() {
   return (
     <Card className="max-w-xl">
       <CardHeader>
-        <CardTitle>New Exam Result</CardTitle>
+        <CardTitle>{isEdit ? "Edit Exam Result" : "New Exam Result"}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -63,6 +120,7 @@ export function ExamResultForm() {
                     items={(exams ?? []).map((e) => ({ label: `${e.offering.course.courseCode} - ${e.examType} (${e.examDate})`, value: String(e.examId) }))}
                     value={field.value}
                     onValueChange={(v) => field.onChange(v)}
+                    disabled={isEdit}
                   >
                     <SelectTrigger id="examId"><SelectValue placeholder="Select exam" /></SelectTrigger>
                     <SelectContent>
@@ -92,6 +150,7 @@ export function ExamResultForm() {
                     )}
                     value={field.value}
                     onValueChange={(v) => field.onChange(v)}
+                    disabled={isEdit}
                   >
                     <SelectTrigger id="enrollmentId"><SelectValue placeholder="Select enrollment" /></SelectTrigger>
                     <SelectContent>
@@ -109,13 +168,13 @@ export function ExamResultForm() {
               )}
             />
             <Field data-invalid={!!errors.score}>
-              <FieldLabel htmlFor="score">Score</FieldLabel>
-              <Input id="score" type="number" step="0.01" {...register("score")} />
+              <FieldLabel htmlFor="score">Score (max {maxScore})</FieldLabel>
+              <Input id="score" type="number" step="0.01" max={maxScore} {...register("score")} />
               <FieldError errors={toError(errors.score)} />
             </Field>
             <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={createExamResult.isPending}>
-                {createExamResult.isPending ? "Saving..." : "Save"}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Saving..." : "Save"}
               </Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
             </div>

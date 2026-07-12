@@ -33,7 +33,7 @@ export function CourseDetail({ id }: { id: number }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" render={<Link href="/courses" />}>
+        <Button variant="ghost" size="icon" render={<Link href="/courses" />} nativeButton={false}>
           <ArrowLeft />
         </Button>
         <div>

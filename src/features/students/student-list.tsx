@@ -71,7 +71,7 @@ export function StudentList() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Students</h1>
         <Can I="create" a="Student">
-          <Button render={<Link href="/students/new" />}>
+          <Button render={<Link href="/students/new" />} nativeButton={false}>
             <Plus data-icon="inline-start" />
             Add Student
           </Button>
@@ -147,7 +147,7 @@ export function StudentList() {
                     <Badge variant={badgeVariant(s.status)}>{s.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="link" size="sm" render={<Link href={`/students/${s.studentId}`} />}>
+                    <Button variant="link" size="sm" render={<Link href={`/students/${s.studentId}`} />} nativeButton={false}>
                       View
                     </Button>
                   </TableCell>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -58,10 +58,10 @@ export function TeacherList() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
         <Can I="create" a="Teacher">
-          <Button render={<Link href="/teachers/new" />}>
+          <Link href="/teachers/new" className={buttonVariants()}>
             <Plus data-icon="inline-start" />
             Add Teacher
-          </Button>
+          </Link>
         </Can>
       </div>
 
@@ -129,9 +129,9 @@ export function TeacherList() {
                 <TableCell className="text-muted-foreground">{t.academicRank}</TableCell>
                 <TableCell className="text-muted-foreground">{t.hireDate}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="link" size="sm" render={<Link href={`/teachers/${t.teacherId}`} />}>
+                  <Link href={`/teachers/${t.teacherId}`} className={buttonVariants({ variant: "link", size: "sm" })}>
                     View
-                  </Button>
+                  </Link>
                 </TableCell>
               </TableRow>
             ))}
