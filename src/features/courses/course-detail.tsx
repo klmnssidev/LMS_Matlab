@@ -27,7 +27,7 @@ import { Can } from "@/permissions/components/can";
 export function CourseDetail({ id }: { id: number }) {
   const router = useRouter();
   const { data: course, isLoading, error } = useCourse(id);
-  const { mutateAsync: deleteCourse, isPending: isDeleting } = useDeleteCourse();
+  const { mutateAsync: deleteCourse, isPending: isDeleting, error: deleteError } = useDeleteCourse();
 
   if (isLoading) return <SkeletonProfile hasAvatar={false} />;
   if (error || !course) return <p className="text-destructive">{error?.message || "Not found"}</p>;
@@ -35,15 +35,19 @@ export function CourseDetail({ id }: { id: number }) {
   const offerings = course.offerings ?? [];
 
   async function handleDelete() {
-    await deleteCourse(id);
-    router.push("/courses");
-    router.refresh();
+    try {
+      await deleteCourse(id);
+      router.push("/courses");
+      router.refresh();
+    } catch {
+      // error surfaced via mutation state
+    }
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
-        <Link href="/courses" className={buttonVariants({ variant: "ghost", size: "icon" })}>
+        <Link href="/courses" className={buttonVariants({ variant: "ghost", size: "icon" })} aria-label="Back to courses">
           <ArrowLeft />
         </Link>
         <div>
@@ -63,6 +67,9 @@ export function CourseDetail({ id }: { id: number }) {
               {isDeleting ? "Deleting..." : "Delete"}
             </Button>
           </Can>
+          {deleteError && (
+            <p className="text-sm text-destructive">{deleteError.message}</p>
+          )}
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,6 +8,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { SkeletonProfile } from "@/components/loading-skeletons";
 import {
   Select,
   SelectContent,
@@ -45,8 +47,13 @@ type Props = {
 
 export function CourseForm({ initial }: Props) {
   const router = useRouter();
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const { data: departments = [] } = useDepartments();
-  const { data: existing } = useCourse(initial?.course_id ?? null);
+  const {
+    data: existing,
+    isLoading: isCourseLoading,
+    error: courseError,
+  } = useCourse(initial?.course_id ?? null);
   const { mutateAsync: createCourse, isPending: isCreating } = useCreateCourse();
   const { mutateAsync: updateCourse, isPending: isUpdating } = useUpdateCourse();
   const isEditing = !!initial?.course_id;
@@ -70,7 +77,12 @@ export function CourseForm({ initial }: Props) {
       : undefined,
   });
 
+  if (isEditing && isCourseLoading) return <SkeletonProfile hasAvatar={false} />;
+  if (isEditing && courseError) return <p className="text-destructive">{courseError.message}</p>;
+  if (isEditing && !existing) return <p className="text-destructive">Course not found</p>;
+
   async function onSubmit(data: FormValues) {
+    setMutationError(null);
     try {
       if (isEditing) {
         await updateCourse({
@@ -90,8 +102,8 @@ export function CourseForm({ initial }: Props) {
       }
       router.push("/courses");
       router.refresh();
-    } catch {
-      // error handled by mutation state
+    } catch (err) {
+      setMutationError(err instanceof Error ? err.message : "Request failed");
     }
   }
 
@@ -165,6 +177,7 @@ export function CourseForm({ initial }: Props) {
               />
 
               {isPending && <p className="text-sm text-muted-foreground">{isEditing ? "Updating course..." : "Creating course..."}</p>}
+              {mutationError && <p className="text-sm text-destructive">{mutationError}</p>}
 
               <div className="flex gap-3 pt-2">
                 <Button type="submit" disabled={isPending}>
