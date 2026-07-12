@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/empty";
 import { SkeletonCardGrid } from "@/components/loading-skeletons";
 import { useCourses } from "@/features/courses/hooks/use-courses";
+import { Can } from "@/permissions/components/can";
 
 export function CourseList() {
   const [search, setSearch] = useState("");
@@ -23,7 +25,15 @@ export function CourseList() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Courses</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Courses</h1>
+        <Can I="create" a="Course">
+          <Link href="/courses/new" className={buttonVariants()}>
+            <Plus data-icon="inline-start" />
+            Add Course
+          </Link>
+        </Can>
+      </div>
 
       <div className="relative max-w-sm">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
