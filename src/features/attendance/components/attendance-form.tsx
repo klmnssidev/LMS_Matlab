@@ -46,6 +46,7 @@ export function BulkAttendanceForm() {
   const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      offeringId: "",
       attendanceDate: new Date().toISOString().split("T")[0],
     },
   });

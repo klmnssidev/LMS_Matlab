@@ -45,13 +45,13 @@ export function TeacherProfile({ id }: { id: number }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" render={<Link href="/teachers" />}>
+        <Button variant="ghost" size="icon" render={<Link href="/teachers" />} nativeButton={false}>
           <ArrowLeft />
         </Button>
         <h1 className="text-3xl font-bold tracking-tight">{teacher.teacherName}</h1>
         <div className="ml-auto flex gap-2">
           <Can I="update" a="Teacher">
-            <Button variant="outline" size="sm" render={<Link href={`/teachers/${teacher.teacherId}/edit`} />}>
+            <Button variant="outline" size="sm" render={<Link href={`/teachers/${teacher.teacherId}/edit`} />} nativeButton={false}>
               <Pencil data-icon="inline-start" />
               Edit
             </Button>

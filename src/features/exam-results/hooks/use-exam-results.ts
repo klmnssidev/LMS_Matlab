@@ -10,6 +10,14 @@ export function useExamResults(params?: { exam_id?: number }) {
   });
 }
 
+export function useExamResult(id: number | null) {
+  return useQuery({
+    queryKey: ["exam-results", id],
+    queryFn: () => examResultApi.fetchExamResult(id!),
+    enabled: id !== null,
+  });
+}
+
 export function useCreateExamResult() {
   const qc = useQueryClient();
   return useMutation({

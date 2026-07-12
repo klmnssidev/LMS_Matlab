@@ -41,6 +41,8 @@ export function EnrollmentForm() {
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      studentId: "",
+      offeringId: "",
       enrollmentDate: new Date().toISOString().split("T")[0],
       status: "Active",
     },

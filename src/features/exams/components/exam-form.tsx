@@ -48,7 +48,12 @@ export function ExamForm({ initialData, examId }: ExamFormProps) {
       examType: editData.examType,
       examDate: editData.examDate,
       maxScore: String(editData.maxScore),
-    } : undefined,
+    } : {
+      offeringId: "",
+      examType: "",
+      examDate: new Date().toISOString().split("T")[0],
+      maxScore: "",
+    },
   });
 
   useEffect(() => {

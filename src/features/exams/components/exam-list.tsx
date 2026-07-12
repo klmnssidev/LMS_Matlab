@@ -46,7 +46,7 @@ export function ExamList() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Exams</h1>
         <Can I="create" a="Exam">
-          <Button render={<Link href="/exams/new" />}>
+          <Button render={<Link href="/exams/new" />} nativeButton={false}>
             <Plus className="size-4" /> New Exam
           </Button>
         </Can>
@@ -105,7 +105,8 @@ export function ExamList() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          render={<Link href={`/exams/${exam.examId}/edit`} />}
+                           render={<Link href={`/exams/${exam.examId}/edit`} />}
+                           nativeButton={false}
                         >
                           <Pencil className="size-4" />
                         </Button>

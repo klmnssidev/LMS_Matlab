@@ -63,7 +63,7 @@ export function EnrollmentList() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Enrollments</h1>
         <Can I="create" a="Enrollment">
-          <Button render={<Link href="/enrollments/new" />}>
+          <Button render={<Link href="/enrollments/new" />} nativeButton={false}>
             <Plus className="size-4" /> New Enrollment
           </Button>
         </Can>
@@ -132,7 +132,7 @@ export function EnrollmentList() {
                   </TableCell>
                   <TableCell>{e.finalGrade ?? "—"}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="link" size="sm" render={<Link href={`/students/${e.studentId}`} />}>
+                    <Button variant="link" size="sm" render={<Link href={`/students/${e.studentId}`} />} nativeButton={false}>
                       View Student
                     </Button>
                   </TableCell>

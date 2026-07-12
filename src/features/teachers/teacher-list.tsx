@@ -58,7 +58,7 @@ export function TeacherList() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
         <Can I="create" a="Teacher">
-          <Button render={<Link href="/teachers/new" />}>
+          <Button render={<Link href="/teachers/new" />} nativeButton={false}>
             <Plus data-icon="inline-start" />
             Add Teacher
           </Button>
@@ -129,7 +129,7 @@ export function TeacherList() {
                 <TableCell className="text-muted-foreground">{t.academicRank}</TableCell>
                 <TableCell className="text-muted-foreground">{t.hireDate}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="link" size="sm" render={<Link href={`/teachers/${t.teacherId}`} />}>
+                  <Button variant="link" size="sm" render={<Link href={`/teachers/${t.teacherId}`} />} nativeButton={false}>
                     View
                   </Button>
                 </TableCell>

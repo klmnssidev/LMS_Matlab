@@ -1,4 +1,5 @@
 import * as examResultRepo from "@/server/repositories/exam-result.repository";
+import * as examRepo from "@/server/repositories/exam.repository";
 import type { ExamResultFilters } from "@/server/repositories/exam-result.repository";
 import type { CreateExamResult, UpdateExamResult, ExamResultJoined } from "@/server/schemas/exam-result.schema";
 import type { AuthorizationScope } from "@/permissions";
@@ -27,7 +28,21 @@ export async function getById(id: number, scope?: AuthorizationScope) {
   return toExamResultJoined(row);
 }
 
+async function validateScore(score: number, examId: number) {
+  if (score > 100) {
+    throw new Error("Score cannot exceed 100");
+  }
+  const exam = await examRepo.findById(examId);
+  if (!exam) {
+    throw new Error("Exam not found");
+  }
+  if (score > Number(exam.maxScore)) {
+    throw new Error(`Score cannot exceed exam max score (${exam.maxScore})`);
+  }
+}
+
 export async function create(data: CreateExamResult) {
+  await validateScore(data.score, data.examId);
   const row = await examResultRepo.create({
     score: data.score,
     exam: { connect: { examId: data.examId } },
@@ -39,6 +54,10 @@ export async function create(data: CreateExamResult) {
 export async function update(id: number, data: UpdateExamResult, scope?: AuthorizationScope) {
   const existing = await examResultRepo.findById(id, scope);
   if (!existing) return null;
+
+  if (data.score !== undefined) {
+    await validateScore(data.score, existing.examId);
+  }
 
   const updateData: Record<string, unknown> = {};
   if (data.score !== undefined) updateData.score = data.score;

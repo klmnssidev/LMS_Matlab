@@ -62,13 +62,13 @@ export function StudentProfile({ id }: { id: number }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" render={<Link href="/students" />}>
+        <Button variant="ghost" size="icon" render={<Link href="/students" />} nativeButton={false}>
           <ArrowLeft />
         </Button>
         <h1 className="text-3xl font-bold tracking-tight">{student.studentName}</h1>
         <div className="ml-auto flex gap-2">
           <Can I="update" a="Student">
-            <Button variant="outline" size="sm" render={<Link href={`/students/${student.studentId}/edit`} />}>
+            <Button variant="outline" size="sm" render={<Link href={`/students/${student.studentId}/edit`} />} nativeButton={false}>
               <Pencil data-icon="inline-start" />
               Edit
             </Button>

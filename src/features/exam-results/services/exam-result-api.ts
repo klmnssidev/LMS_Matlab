@@ -19,6 +19,15 @@ export async function fetchExamResults(params?: { exam_id?: number; student_id?:
   return res.json();
 }
 
+export async function fetchExamResult(id: number): Promise<ExamResultJoined> {
+  const res = await fetch(`${BASE}?id=${id}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Failed to fetch exam result" }));
+    throw new Error(err.error ?? "Failed to fetch exam result");
+  }
+  return res.json();
+}
+
 export async function createExamResult(data: Record<string, unknown>): Promise<ExamResultJoined> {
   const res = await fetch(BASE, {
     method: "POST",
