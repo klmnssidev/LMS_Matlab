@@ -255,6 +255,31 @@ export async function getAdminLatestAttendance(): Promise<{ attendance_id: numbe
   `;
 }
 
+export async function getTeacherOfferingCount(teacherId: number): Promise<number> {
+  return prisma.courseOffering.count({ where: { teacherId } });
+}
+
+export async function getTeacherStudentCount(teacherId: number): Promise<number> {
+  const rows = await prisma.$queryRaw<{ count: number }[]>`
+    SELECT COUNT(DISTINCT e.student_id)::int as count
+    FROM enrollments e
+    JOIN course_offerings o ON o.offering_id = e.offering_id AND o.teacher_id = ${teacherId}
+  `;
+  return Number(rows[0]?.count ?? 0);
+}
+
+export async function getTeacherUpcomingExams(teacherId: number): Promise<{ exam_id: number; course_name: string; exam_date: string; exam_type: string }[]> {
+  return prisma.$queryRaw<{ exam_id: number; course_name: string; exam_date: string; exam_type: string }[]>`
+    SELECT ex.exam_id, c.course_name, ex.exam_date::text, ex.exam_type
+    FROM exams ex
+    JOIN course_offerings o ON o.offering_id = ex.offering_id AND o.teacher_id = ${teacherId}
+    JOIN courses c ON c.course_id = o.course_id
+    WHERE ex.exam_date >= CURRENT_DATE
+    ORDER BY ex.exam_date
+    LIMIT 5
+  `;
+}
+
 export type StudentSemester = { semesterId: number; semesterName: string; academicYear: string };
 
 export async function getStudentSemesters(studentId: number): Promise<StudentSemester[]> {

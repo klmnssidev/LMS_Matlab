@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import * as accountLinkingService from "@/server/services/account-linking.service";
+import * as userAccountRepo from "@/server/repositories/user-account.repository";
 
 const LinkStudentSchema = z.object({
   studentNumber: z.string().min(1, "Student number is required"),
@@ -85,4 +86,37 @@ export async function me() {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+export async function handleClerkWebhook(evt: { type: string; data: Record<string, unknown> }) {
+  if (evt.type !== "user.created") {
+    return NextResponse.json({ success: true });
+  }
+
+  const userId = evt.data.id as string;
+  const email = (evt.data.email_addresses as Array<{ email_address: string }>)?.[0]?.email_address;
+
+  if (!email) {
+    return NextResponse.json({ error: "No email" }, { status: 400 });
+  }
+
+  const existing = await userAccountRepo.findByClerkId(userId);
+  if (existing) {
+    return NextResponse.json({ success: true });
+  }
+
+  try {
+    await accountLinkingService.linkByEmail(userId, email);
+  } catch (error) {
+    if (
+      error instanceof accountLinkingService.AccountAlreadyLinkedError ||
+      error instanceof accountLinkingService.StudentAlreadyLinkedError ||
+      error instanceof accountLinkingService.TeacherAlreadyLinkedError
+    ) {
+      return NextResponse.json({ success: true });
+    }
+    throw error;
+  }
+
+  return NextResponse.json({ success: true });
 }
