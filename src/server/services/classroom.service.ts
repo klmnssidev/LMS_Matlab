@@ -1,7 +1,5 @@
-import { prisma } from "@/server/lib/prisma";
+import * as classroomRepo from "@/server/repositories/classroom.repository";
 
 export async function list() {
-  return prisma.classroom.findMany({
-    orderBy: { roomCode: "asc" },
-  });
+  return classroomRepo.findAll();
 }

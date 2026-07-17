@@ -1,7 +1,5 @@
-import { prisma } from "@/server/lib/prisma";
+import * as semesterRepo from "@/server/repositories/semester.repository";
 
 export async function list() {
-  return prisma.semester.findMany({
-    orderBy: { semesterName: "desc" },
-  });
+  return semesterRepo.findAll();
 }

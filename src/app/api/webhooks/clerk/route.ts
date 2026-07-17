@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/server/lib/prisma";
 import * as userAccountRepo from "@/server/repositories/user-account.repository";
+import * as studentRepo from "@/server/repositories/student.repository";
+import * as teacherRepo from "@/server/repositories/teacher.repository";
+import * as adminRepo from "@/server/repositories/admin.repository";
 
 export async function POST(req: Request) {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
@@ -50,10 +52,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true });
     }
 
-    const student = await prisma.student.findFirst({
-      where: { email },
-      select: { studentId: true },
-    });
+    const student = await studentRepo.findByEmail(email);
 
     if (student) {
       const linked = await userAccountRepo.findByStudentId(student.studentId);
@@ -68,10 +67,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true });
     }
 
-    const teacher = await prisma.teacher.findFirst({
-      where: { email },
-      select: { teacherId: true },
-    });
+    const teacher = await teacherRepo.findByEmail(email);
 
     if (teacher) {
       const linked = await userAccountRepo.findByTeacherId(teacher.teacherId);
@@ -86,10 +82,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true });
     }
 
-    const admin = await prisma.admin.findFirst({
-      where: { email },
-      select: { adminId: true },
-    });
+    const admin = await adminRepo.findByEmail(email);
 
     if (admin) {
       const linked = await userAccountRepo.findByEmail(email);

@@ -1,6 +1,6 @@
-import { prisma } from "@/server/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import * as examRepo from "@/server/repositories/exam.repository";
+import * as courseOfferingRepo from "@/server/repositories/course-offering.repository";
 import type { ExamFilters } from "@/server/repositories/exam.repository";
 import type { CreateExam, UpdateExam, ExamJoined } from "@/server/schemas/exam.schema";
 import type { AuthorizationScope } from "@/permissions";
@@ -25,10 +25,7 @@ function toExamJoined(row: Awaited<ReturnType<typeof examRepo.findMany>>[number]
 async function validateOfferingScope(offeringId: number, scope?: AuthorizationScope): Promise<void> {
   if (!scope || scope.role === "Admin") return;
   if (scope.role === "Teacher") {
-    const offering = await prisma.courseOffering.findUnique({
-      where: { offeringId },
-      select: { teacherId: true },
-    });
+    const offering = await courseOfferingRepo.findById(offeringId);
     if (!offering || offering.teacherId !== scope.teacherId) {
       throw new Error("Forbidden: cannot create exam for this offering");
     }
