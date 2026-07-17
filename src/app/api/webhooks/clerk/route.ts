@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import * as userAccountRepo from "@/server/repositories/user-account.repository";
-import * as studentRepo from "@/server/repositories/student.repository";
-import * as teacherRepo from "@/server/repositories/teacher.repository";
-import * as adminRepo from "@/server/repositories/admin.repository";
+import { handleClerkWebhook } from "@/server/controllers/account.controller";
 
 export async function POST(req: Request) {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
@@ -32,70 +29,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  const { type, data } = evt;
-
-  if (type === "user.created") {
-    const userId = data.id as string;
-    const email = (data.email_addresses as Array<{ email_address: string }>)?.[0]?.email_address;
-
-    if (!email) {
-      return NextResponse.json({ error: "No email" }, { status: 400 });
-    }
-
-    const existing = await userAccountRepo.findByClerkId(userId);
-    if (existing) {
-      return NextResponse.json({ success: true });
-    }
-
-    const linkedByEmail = await userAccountRepo.findByEmail(email);
-    if (linkedByEmail) {
-      return NextResponse.json({ success: true });
-    }
-
-    const student = await studentRepo.findByEmail(email);
-
-    if (student) {
-      const linked = await userAccountRepo.findByStudentId(student.studentId);
-      if (!linked) {
-        await userAccountRepo.create({
-          clerkUserId: userId,
-          email,
-          role: "STUDENT",
-          studentId: student.studentId,
-        });
-      }
-      return NextResponse.json({ success: true });
-    }
-
-    const teacher = await teacherRepo.findByEmail(email);
-
-    if (teacher) {
-      const linked = await userAccountRepo.findByTeacherId(teacher.teacherId);
-      if (!linked) {
-        await userAccountRepo.create({
-          clerkUserId: userId,
-          email,
-          role: "TEACHER",
-          teacherId: teacher.teacherId,
-        });
-      }
-      return NextResponse.json({ success: true });
-    }
-
-    const admin = await adminRepo.findByEmail(email);
-
-    if (admin) {
-      const linked = await userAccountRepo.findByEmail(email);
-      if (!linked) {
-        await userAccountRepo.create({
-          clerkUserId: userId,
-          email,
-          role: "ADMIN",
-        });
-      }
-      return NextResponse.json({ success: true });
-    }
-  }
-
-  return NextResponse.json({ success: true });
+  return handleClerkWebhook(evt);
 }

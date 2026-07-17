@@ -25,7 +25,7 @@ function toExamJoined(row: Awaited<ReturnType<typeof examRepo.findMany>>[number]
 async function validateOfferingScope(offeringId: number, scope?: AuthorizationScope): Promise<void> {
   if (!scope || scope.role === "Admin") return;
   if (scope.role === "Teacher") {
-    const offering = await courseOfferingRepo.findById(offeringId);
+    const offering = await courseOfferingRepo.findById(offeringId, scope);
     if (!offering || offering.teacherId !== scope.teacherId) {
       throw new Error("Forbidden: cannot create exam for this offering");
     }
